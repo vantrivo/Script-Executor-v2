@@ -31,22 +31,11 @@ local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "TitleLabel"
 TitleLabel.Size = UDim2.new(1, -60, 1, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "Script Executor"
+TitleLabel.Text = "Trivo cool priv exec very good"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 18
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.Parent = TitleBar
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 18
-CloseButton.Font = Enum.Font.SourceSansBold
-CloseButton.Parent = TitleBar
 
 -- Script Box (Multi-line support)
 local ScriptBox = Instance.new("TextBox")
@@ -114,10 +103,68 @@ AddLineButton.TextSize = 16
 AddLineButton.Font = Enum.Font.SourceSansBold
 AddLineButton.Parent = MainFrame
 
--- Line counter
-local lineCounter = 1
+-- Circular Movable Toggle Button (Green)
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Position = UDim2.new(0.5, -25, 0.2, -25)  -- Start in the middle of the screen
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green color
+ToggleButton.Text = "open"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 14
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.BackgroundTransparency = 0.5
+ToggleButton.Parent = ScreenGui
 
--- Functionality for dragging
+local XB = Instance.new("TextButton")
+XB.Name = "XButon"
+XB.Size = UDim2.new(0, 50, 0, 50)
+XB.Position = UDim2.new(0.4, -25, 0.2, -25)  -- Start in the middle of the screen
+XB.BackgroundColor3 = Color3.fromRGB(100, 0, 0)  -- Green color
+XB.Text = "X"
+XB.TextColor3 = Color3.fromRGB(255, 255, 255)
+XB.TextSize = 14
+XB.Font = Enum.Font.SourceSansBold
+XB.BackgroundTransparency = 0.5
+XB.Parent = ScreenGui
+
+-- Function to toggle MainFrame visibility
+ToggleButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Make the Toggle Button Draggable
+local draggingToggle
+local dragInputToggle
+local dragStartToggle
+local startPosToggle
+
+local function updateInputToggle(input)
+    local delta = input.Position - dragStartToggle
+    ToggleButton.Position = UDim2.new(startPosToggle.X.Scale, startPosToggle.X.Offset + delta.X, startPosToggle.Y.Scale, startPosToggle.Y.Offset + delta.Y)
+end
+
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingToggle = true
+        dragStartToggle = input.Position
+        startPosToggle = ToggleButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingToggle = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInputToggle and draggingToggle then
+        updateInputToggle(input)
+    end
+end)
+
+-- Draggable MainFrame
 local dragging
 local dragInput
 local dragStart
@@ -154,10 +201,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
 -- Execute Button Functionality
 ExecuteButton.MouseButton1Click:Connect(function()
     local script = ScriptBox.Text
@@ -181,17 +224,22 @@ end)
 -- Clear Button Functionality
 ClearButton.MouseButton1Click:Connect(function()
     ScriptBox.Text = ""
-    ErrorDisplay.Text = ""
-    lineCounter = 1  -- Reset line counter when clearing the box
+    ErrorDisplay.Text = "cleared"
+end)
+
+-- Clear Button Functionality
+XB.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
 -- Add Line Button Functionality
+local lineCounter = 1
 AddLineButton.MouseButton1Click:Connect(function()
     local currentText = ScriptBox.Text
     ScriptBox.Text = currentText .. "\n-- Line " .. lineCounter  -- Add a new line with a comment
-    lineCounter = lineCounter + 1  -- Increment line counter after adding a line
+    lineCounter = lineCounter + 1 ErrorDisplay.Text = "Added Line"
 end)
 
 -- Initial Setup
 ErrorDisplay.Text = "Script Executor successfully loaded."
-ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)  -- Cyan for initial info
+ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
