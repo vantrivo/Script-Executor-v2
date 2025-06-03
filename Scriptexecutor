@@ -37,7 +37,7 @@ TitleLabel.TextSize = 18
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.Parent = TitleBar
 
--- Script Box (Multi-line support)
+-- Script Box 
 local ScriptBox = Instance.new("TextBox")
 ScriptBox.Name = "ScriptBox"
 ScriptBox.Size = UDim2.new(1, -20, 1, -80)
@@ -54,11 +54,11 @@ ScriptBox.MultiLine = true  -- Enable multi-line input
 ScriptBox.PlaceholderText = "Enter your script here..."
 ScriptBox.Parent = MainFrame
 
--- Error Display (for script errors)
+-- Error Display 
 local ErrorDisplay = Instance.new("TextLabel")
 ErrorDisplay.Name = "ErrorDisplay"
 ErrorDisplay.Size = UDim2.new(1, -20, 0, 40)
-ErrorDisplay.Position = UDim2.new(0, 10, 1, -80)
+ErrorDisplay.Position = UDim2.new(0, 10, 0.4, -80)
 ErrorDisplay.BackgroundTransparency = 1
 ErrorDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)
 ErrorDisplay.TextSize = 14
@@ -91,7 +91,7 @@ ClearButton.TextSize = 16
 ClearButton.Font = Enum.Font.SourceSansBold
 ClearButton.Parent = MainFrame
 
--- Add New Line Button (Green Button)
+-- Add New Line Button 
 local AddLineButton = Instance.new("TextButton")
 AddLineButton.Name = "AddLineButton"
 AddLineButton.Size = UDim2.new(0, 100, 0, 30)
@@ -128,41 +128,11 @@ XB.Font = Enum.Font.SourceSansBold
 XB.BackgroundTransparency = 0.5
 XB.Parent = ScreenGui
 
--- Function to toggle MainFrame visibility
+
 ToggleButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- Make the Toggle Button Draggable
-local draggingToggle
-local dragInputToggle
-local dragStartToggle
-local startPosToggle
-
-local function updateInputToggle(input)
-    local delta = input.Position - dragStartToggle
-    ToggleButton.Position = UDim2.new(startPosToggle.X.Scale, startPosToggle.X.Offset + delta.X, startPosToggle.Y.Scale, startPosToggle.Y.Offset + delta.Y)
-end
-
-ToggleButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingToggle = true
-        dragStartToggle = input.Position
-        startPosToggle = ToggleButton.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                draggingToggle = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInputToggle and draggingToggle then
-        updateInputToggle(input)
-    end
-end)
 
 -- Draggable MainFrame
 local dragging
@@ -201,7 +171,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Execute Button Functionality
+-- Execute Button executes
 ExecuteButton.MouseButton1Click:Connect(function()
     local script = ScriptBox.Text
     if script and script ~= "" then
@@ -232,14 +202,14 @@ XB.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Add Line Button Functionality
+-- make Line Button
 local lineCounter = 1
 AddLineButton.MouseButton1Click:Connect(function()
     local currentText = ScriptBox.Text
-    ScriptBox.Text = currentText .. "\n-- Line " .. lineCounter  -- Add a new line with a comment
+    ScriptBox.Text = currentText .. "\n --line " .. lineCounter  -- Add a new line with a comment
     lineCounter = lineCounter + 1 ErrorDisplay.Text = "Added Line"
 end)
 
--- Initial Setup
+-- wow
 ErrorDisplay.Text = "Script Executor successfully loaded."
 ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
