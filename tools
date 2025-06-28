@@ -1,0 +1,97 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local tool = Instance.new("Tool", LocalPlayer.Backpack)
+tool.Name = "speed."
+tool.RequiresHandle = false
+
+local moving = false
+local bodyVelocity = nil
+local speed = 30 -- adjust speed here
+
+tool.Equipped:Connect(function()
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        -- Add BodyVelocity
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5) -- Only move on XZ plane
+        bodyVelocity.Velocity = Vector3.zero
+        bodyVelocity.Parent = character.HumanoidRootPart
+        moving = true
+    end
+end)
+
+tool.Unequipped:Connect(function()
+    moving = false
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if moving and bodyVelocity then
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            local dir = humanoid.MoveDirection
+            if dir.Magnitude > 0 then
+                bodyVelocity.Velocity = dir.Unit * speed
+            else
+                bodyVelocity.Velocity = Vector3.zero
+            end
+        end
+    end
+end) local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local tool = Instance.new("Tool")
+tool.Name = "toolio coolio"
+tool.RequiresHandle = false
+tool.Parent = LocalPlayer.Backpack
+
+local isEquipped = false
+
+local function teleportBehindNearest()
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    local rp = character.HumanoidRootPart
+    local closestPlayer = nil
+    local shortestDistance = 100
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Name ~= "jack101niku" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRP = player.Character.HumanoidRootPart
+            local distance = (rp.Position - targetRP.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestPlayer = player
+            end
+        end
+    end
+
+    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetRP = closestPlayer.Character.HumanoidRootPart
+        local backOffset = targetRP.CFrame.LookVector * -3 -- 3 studs behind
+        local newPosition = targetRP.Position + backOffset + Vector3.new(0, 2, 0)
+        rp.CFrame = CFrame.new(newPosition, targetRP.Position)
+    end
+end
+
+tool.Equipped:Connect(function()
+    isEquipped = true
+    -- Start loop
+    task.spawn(function()
+        while isEquipped do
+            teleportBehindNearest()
+            task.wait() -- adjust delay as needed
+        end
+    end)
+end)
+
+tool.Unequipped:Connect(function()
+    isEquipped = false
+end)
