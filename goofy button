@@ -1,0 +1,110 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- You can edit this to move the platform higher or lower relative to your feet (in studs)
+local platformYOffset = 	1.99-- 0 means right at feet bottom, positive values move it lower
+
+-- Create ScreenGui
+local ScreenGUI = Instance.new("ScreenGui")
+ScreenGUI.Name = "JumpPartButtonGUI"
+ScreenGUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGUI.ResetOnSpawn = true
+
+-- Button 1: Dash V2
+local dashButton = Instance.new("TextButton")
+dashButton.Parent = ScreenGUI
+dashButton.Text = "Dash V2"
+dashButton.Position = UDim2.new(0.3, 0, 0.81, 0)
+dashButton.Size = UDim2.new(0.06, 0, 0.08, 0)
+dashButton.TextScaled = true
+dashButton.Font = Enum.Font.FredokaOne
+dashButton.BackgroundTransparency = 0.3
+dashButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+dashButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+dashButton.MouseButton1Down:Connect(function()
+	for i = 1, 20 do
+		wait()
+		local character = LocalPlayer.Character
+		if character and character:FindFirstChild("HumanoidRootPart") then
+			character:PivotTo(character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3))
+		end
+	end
+end)
+
+-- Button 2: Elevate (teleport up 30 studs)
+local elevateButton = Instance.new("TextButton")
+elevateButton.Parent = ScreenGUI
+elevateButton.Text = "Elevate"
+elevateButton.Position = UDim2.new(0.65, 0, 0.81, 0)
+elevateButton.Size = UDim2.new(0.06, 0, 0.08, 0)
+elevateButton.TextScaled = true
+elevateButton.Font = Enum.Font.FredokaOne
+elevateButton.BackgroundTransparency = 0.3
+elevateButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+elevateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+elevateButton.MouseButton1Down:Connect(function()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		character:PivotTo(character.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+		character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+	end
+end)
+
+-- Button 3: Toggle Invisible Platform that follows player
+local platformButton = Instance.new("TextButton")
+platformButton.Parent = ScreenGUI
+platformButton.Text = "Platform"
+platformButton.Position = UDim2.new(0.65, 0, 0.91, 0)
+platformButton.Size = UDim2.new(0.06, 0, 0.08, 0)
+platformButton.TextScaled = true
+platformButton.Font = Enum.Font.FredokaOne
+platformButton.BackgroundTransparency = 0.3
+platformButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+platformButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local spawnedPlatform = nil
+local followConnection = nil
+
+local function updatePlatformPosition()
+	local character = LocalPlayer.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") or not spawnedPlatform then return end
+
+	local hrp = character.HumanoidRootPart
+	local platformHeight = spawnedPlatform.Size.Y
+	local platformY = hrp.Position.Y - (hrp.Size.Y / 2 + platformHeight / 2) - platformYOffset
+	spawnedPlatform.Position = Vector3.new(hrp.Position.X, platformY, hrp.Position.Z)
+end
+
+platformButton.MouseButton1Down:Connect(function()
+	local character = LocalPlayer.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+	if spawnedPlatform and spawnedPlatform.Parent then
+		-- Remove platform and disconnect update
+		spawnedPlatform:Destroy()
+		spawnedPlatform = nil
+		if followConnection then
+			followConnection:Disconnect()
+			followConnection = nil
+		end
+	else
+		-- Spawn invisible platform
+		local part = Instance.new("Part")
+		part.Name = "JumpPlatform"
+		part.Size = Vector3.new(6, 1, 6)
+		part.Transparency = 1 -- fully invisible
+		part.Anchored = true
+		part.CanCollide = true
+		part.Parent = workspace
+		spawnedPlatform = part
+
+		-- Start updating position every frame
+		followConnection = RunService.RenderStepped:Connect(updatePlatformPosition)
+		-- Immediately position it
+		updatePlatformPosition()
+	end
+end)
