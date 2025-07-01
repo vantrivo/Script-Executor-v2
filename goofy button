@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- You can edit this to move the platform higher or lower relative to your feet (in studs)
-local platformYOffset = 	1.99-- 0 means right at feet bottom, positive values move it lower
+local platformYOffset = 	1.999-- 0 means right at feet bottom, positive values move it lower
 
 -- Create ScreenGui
 local ScreenGUI = Instance.new("ScreenGui")
