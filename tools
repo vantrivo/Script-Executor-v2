@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
 
 -- ========== Speed Tool ==========
@@ -9,45 +8,113 @@ speedTool.Name = "speed."
 speedTool.RequiresHandle = false
 speedTool.Parent = LocalPlayer.Backpack
 
-local speed = 30 -- adjustable speed
+local speed = 30 -- default speed
 local moving = false
 local bodyVelocity = nil
+local speedUI = nil
+
+-- Create the UI
+local function createSpeedUI()
+	if speedUI then speedUI:Destroy() end
+
+	speedUI = Instance.new("ScreenGui")
+	speedUI.Name = "SpeedUI"
+	speedUI.ResetOnSpawn = false
+	speedUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	local frame = Instance.new("Frame")
+	frame.Name = "DragFrame"
+	frame.Position = UDim2.new(0.1, 0, 0.2, 0)
+	frame.Size = UDim2.new(0, 200, 0, 100)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	frame.BorderSizePixel = 0
+	frame.Active = true
+	frame.Draggable = true
+	frame.Parent = speedUI
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0.4, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = "Speed:"
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.SourceSans
+	label.TextScaled = true
+	label.Parent = frame
+
+	local textbox = Instance.new("TextBox")
+	textbox.Size = UDim2.new(0.8, 0, 0.4, 0)
+	textbox.Position = UDim2.new(0.1, 0, 0.5, 0)
+	textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	textbox.TextColor3 = Color3.new(1, 1, 1)
+	textbox.Font = Enum.Font.SourceSans
+	textbox.TextScaled = true
+	textbox.Text = tostring(speed)
+	textbox.ClearTextOnFocus = false
+	textbox.Parent = frame
+
+	textbox.FocusLost:Connect(function(enterPressed)
+		local newSpeed = tonumber(textbox.Text)
+		if newSpeed and newSpeed >= 0 then
+			speed = newSpeed
+		else
+			textbox.Text = tostring(speed) -- Reset to valid value
+		end
+	end)
+end
+
+local function destroySpeedUI()
+	if speedUI then
+		speedUI:Destroy()
+		speedUI = nil
+	end
+end
 
 speedTool.Equipped:Connect(function()
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5) -- horizontal movement only
-        bodyVelocity.Velocity = Vector3.zero
-        bodyVelocity.Parent = character.HumanoidRootPart
-        moving = true
-    end
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5)
+		bodyVelocity.Velocity = Vector3.zero
+		bodyVelocity.Parent = character.HumanoidRootPart
+		moving = true
+		createSpeedUI()
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.Died:Connect(function()
+				moving = false
+				destroySpeedUI()
+			end)
+		end
+	end
 end)
 
 speedTool.Unequipped:Connect(function()
-    moving = false
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
-    end
+	moving = false
+	if bodyVelocity then
+		bodyVelocity:Destroy()
+		bodyVelocity = nil
+	end
+	destroySpeedUI()
 end)
 
 RunService.RenderStepped:Connect(function()
-    if moving and bodyVelocity then
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChildOfClass("Humanoid") then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            local dir = humanoid.MoveDirection
-            if dir.Magnitude > 0 then
-                bodyVelocity.Velocity = dir.Unit * speed
-            else
-                bodyVelocity.Velocity = Vector3.zero
-            end
-        end
-    end
+	if moving and bodyVelocity then
+		local character = LocalPlayer.Character
+		if character and character:FindFirstChildOfClass("Humanoid") then
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			local dir = humanoid.MoveDirection
+			if dir.Magnitude > 0 then
+				bodyVelocity.Velocity = dir.Unit * speed
+			else
+				bodyVelocity.Velocity = Vector3.zero
+			end
+		end
+	end
 end)
 
--- ========== Teleport Tool ==========
+-- ========== Teleport Tool (unchanged from earlier) ==========
 local tpTool = Instance.new("Tool")
 tpTool.Name = "toolio coolio"
 tpTool.RequiresHandle = false
@@ -57,60 +124,58 @@ local isEquipped = false
 local originalCFrame = nil
 
 local function teleportBehindNearest()
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+	local character = LocalPlayer.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
 
-    local rp = character.HumanoidRootPart
-    local closestPlayer = nil
-    local shortestDistance = 100
+	local rp = character.HumanoidRootPart
+	local closestPlayer = nil
+	local shortestDistance = 100
 
-    for _, player in pairs(Players:GetPlayers()) do
-        if
-            player ~= LocalPlayer
-            and player.Name ~= "jack101niku"
-            and not LocalPlayer:IsFriendsWith(player.UserId)
-            and player.Character
-            and player.Character:FindFirstChild("HumanoidRootPart")
-        then
-            local targetRP = player.Character.HumanoidRootPart
-            local distance = (rp.Position - targetRP.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                closestPlayer = player
-            end
-        end
-    end
+	for _, player in pairs(Players:GetPlayers()) do
+		if
+			player ~= LocalPlayer
+			and player.Name ~= "jack101niku"
+			and not LocalPlayer:IsFriendsWith(player.UserId)
+			and player.Character
+			and player.Character:FindFirstChild("HumanoidRootPart")
+		then
+			local targetRP = player.Character.HumanoidRootPart
+			local distance = (rp.Position - targetRP.Position).Magnitude
+			if distance < shortestDistance then
+				shortestDistance = distance
+				closestPlayer = player
+			end
+		end
+	end
 
-    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local targetRP = closestPlayer.Character.HumanoidRootPart
-        local backOffset = targetRP.CFrame.LookVector * -3 -- 3 studs behind
-        local newPosition = targetRP.Position + backOffset + Vector3.new(0, 2, 0)
-
-        -- Face target horizontally only
-        local horizontalTargetPos = Vector3.new(targetRP.Position.X, newPosition.Y, targetRP.Position.Z)
-        rp.CFrame = CFrame.new(newPosition, horizontalTargetPos)
-    end
+	if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		local targetRP = closestPlayer.Character.HumanoidRootPart
+		local backOffset = targetRP.CFrame.LookVector * -3
+		local newPosition = targetRP.Position + backOffset + Vector3.new(0, 2, 0)
+		local horizontalTargetPos = Vector3.new(targetRP.Position.X, newPosition.Y, targetRP.Position.Z)
+		rp.CFrame = CFrame.new(newPosition, horizontalTargetPos)
+	end
 end
 
 tpTool.Equipped:Connect(function()
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        originalCFrame = character.HumanoidRootPart.CFrame
-    end
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		originalCFrame = character.HumanoidRootPart.CFrame
+	end
 
-    isEquipped = true
-    task.spawn(function()
-        while isEquipped do
-            teleportBehindNearest()
-            task.wait() -- adjustable cooldown
-        end
-    end)
+	isEquipped = true
+	task.spawn(function()
+		while isEquipped do
+			teleportBehindNearest()
+			task.wait()
+		end
+	end)
 end)
 
 tpTool.Unequipped:Connect(function()
-    isEquipped = false
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") and originalCFrame then
-        character.HumanoidRootPart.CFrame = originalCFrame
-    end
+	isEquipped = false
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") and originalCFrame then
+		character.HumanoidRootPart.CFrame = originalCFrame
+	end
 end)
