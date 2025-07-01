@@ -1,0 +1,36 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local animator = humanoid:FindFirstChildOfClass("Animator")
+
+local animation = Instance.new("Animation")
+animation.AnimationId = "rbxassetid://7153089359"
+
+if animator then
+    local animtrack = animator:LoadAnimation(animation)
+
+    animtrack:Play()
+    task.wait(0.05) -- wait for animation to start
+    animtrack.TimePosition = 0.9 -- start from 0.9 seconds
+
+    animtrack:AdjustSpeed(0) -- freeze animation at that frame
+
+    -- Connection to continuously stop other animations
+    local heartbeatConnection
+    heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+            if track ~= animtrack then
+                track:Stop()
+            end
+        end
+
+        -- Stop loop and animation on death
+        if humanoid.Health <= 0 then
+            animtrack:Stop()
+            heartbeatConnection:Disconnect()
+        end
+    end)
+else
+    warn("Animator not found; are you using R6?")
+end
