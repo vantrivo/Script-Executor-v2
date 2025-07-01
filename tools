@@ -2,27 +2,29 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local tool = Instance.new("Tool", LocalPlayer.Backpack)
-tool.Name = "speed."
-tool.RequiresHandle = false
 
+-- ========== Speed Tool ==========
+local speedTool = Instance.new("Tool")
+speedTool.Name = "speed."
+speedTool.RequiresHandle = false
+speedTool.Parent = LocalPlayer.Backpack
+
+local speed = 30 -- adjustable speed
 local moving = false
 local bodyVelocity = nil
-local speed = 30 -- adjust speed here
 
-tool.Equipped:Connect(function()
+speedTool.Equipped:Connect(function()
     local character = LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
-        -- Add BodyVelocity
         bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5) -- Only move on XZ plane
+        bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5) -- horizontal movement only
         bodyVelocity.Velocity = Vector3.zero
         bodyVelocity.Parent = character.HumanoidRootPart
         moving = true
     end
 end)
 
-tool.Unequipped:Connect(function()
+speedTool.Unequipped:Connect(function()
     moving = false
     if bodyVelocity then
         bodyVelocity:Destroy()
@@ -43,16 +45,16 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
-end) local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+end)
 
-local tool = Instance.new("Tool")
-tool.Name = "toolio coolio"
-tool.RequiresHandle = false
-tool.Parent = LocalPlayer.Backpack
+-- ========== Teleport Tool ==========
+local tpTool = Instance.new("Tool")
+tpTool.Name = "toolio coolio"
+tpTool.RequiresHandle = false
+tpTool.Parent = LocalPlayer.Backpack
 
 local isEquipped = false
+local originalCFrame = nil
 
 local function teleportBehindNearest()
     local character = LocalPlayer.Character
@@ -63,7 +65,13 @@ local function teleportBehindNearest()
     local shortestDistance = 100
 
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Name ~= "jack101niku" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if
+            player ~= LocalPlayer
+            and player.Name ~= "jack101niku"
+            and not LocalPlayer:IsFriendsWith(player.UserId)
+            and player.Character
+            and player.Character:FindFirstChild("HumanoidRootPart")
+        then
             local targetRP = player.Character.HumanoidRootPart
             local distance = (rp.Position - targetRP.Position).Magnitude
             if distance < shortestDistance then
@@ -77,21 +85,32 @@ local function teleportBehindNearest()
         local targetRP = closestPlayer.Character.HumanoidRootPart
         local backOffset = targetRP.CFrame.LookVector * -3 -- 3 studs behind
         local newPosition = targetRP.Position + backOffset + Vector3.new(0, 2, 0)
-        rp.CFrame = CFrame.new(newPosition, targetRP.Position)
+
+        -- Face target horizontally only
+        local horizontalTargetPos = Vector3.new(targetRP.Position.X, newPosition.Y, targetRP.Position.Z)
+        rp.CFrame = CFrame.new(newPosition, horizontalTargetPos)
     end
 end
 
-tool.Equipped:Connect(function()
+tpTool.Equipped:Connect(function()
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        originalCFrame = character.HumanoidRootPart.CFrame
+    end
+
     isEquipped = true
-    -- Start loop
     task.spawn(function()
         while isEquipped do
             teleportBehindNearest()
-            task.wait() -- adjust delay as needed
+            task.wait() -- adjustable cooldown
         end
     end)
 end)
 
-tool.Unequipped:Connect(function()
+tpTool.Unequipped:Connect(function()
     isEquipped = false
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") and originalCFrame then
+        character.HumanoidRootPart.CFrame = originalCFrame
+    end
 end)
