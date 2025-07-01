@@ -1,0 +1,50 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local tool = Instance.new("Tool")
+tool.Name = "voidTP"
+tool.RequiresHandle = false
+tool.Parent = LocalPlayer:WaitForChild("Backpack")
+
+local originalCFrame = nil
+local velocityResetConnection = nil
+
+tool.Equipped:Connect(function()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		local hrp = character.HumanoidRootPart
+		originalCFrame = hrp.CFrame
+
+		-- TP to high above void
+		hrp.CFrame = CFrame.new(Vector3.new(1e5, 5000, 1e5))
+
+		-- Cancel existing momentum
+		local rootVel = hrp:FindFirstChild("RootVelocity")
+		if rootVel then
+			rootVel:Destroy()
+		end
+
+		local bv = Instance.new("BodyVelocity")
+		bv.Name = "RootVelocity"
+		bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+		bv.Velocity = Vector3.zero
+		bv.P = 1250
+		bv.Parent = hrp
+
+	
+tool.Unequipped:Connect(function()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("HumanoidRootPart") and originalCFrame then
+		local hrp = character.HumanoidRootPart
+
+		-- Reset velocity to avoid falling/sliding
+		hrp.Velocity = Vector3.zero
+
+		-- Restore position
+		hrp.CFrame = originalCFrame
+
+		-- Clean up any velocity constraint
+		local bv = hrp:FindFirstChild("RootVelocity")
+		if bv then bv:Destroy() end
+	end
+end)
