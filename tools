@@ -150,7 +150,7 @@ local function teleportBehindNearest()
 
 	if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
 		local targetRP = closestPlayer.Character.HumanoidRootPart
-		local backOffset = targetRP.CFrame.LookVector * -3.75
+		local backOffset = targetRP.CFrame.LookVector * -1.75
 		local newPosition = targetRP.Position + backOffset + Vector3.new(0, -1, 0)
 		local horizontalTargetPos = Vector3.new(targetRP.Position.X, newPosition.Y, targetRP.Position.Z)
 		rp.CFrame = CFrame.new(newPosition, horizontalTargetPos)
