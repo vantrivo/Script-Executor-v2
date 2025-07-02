@@ -1,0 +1,37 @@
+-- Configuration
+local ALLOWED_PLACE_ID = 1234567890  -- Replace with your game’s PlaceId
+local TARGET_WALK_SPEED = 20         -- Desired WalkSpeed
+local LOOP_INTERVAL = 0.1            -- Time interval between checks
+
+-- Only run if the PlaceId matches
+if game.PlaceId ~= ALLOWED_PLACE_ID then
+    warn("LoopWalkSpeed script disabled: PlaceId does not match.")
+    return
+end
+
+-- Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- lws
+local function loopWalkSpeed()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+
+    while true do
+        if humanoid and humanoid.WalkSpeed ~= TARGET_WALK_SPEED then
+            humanoid.WalkSpeed = TARGET_WALK_SPEED
+        end
+        task.wait(LOOP_INTERVAL)
+    end
+end
+
+-- respawning lws
+player.CharacterAdded:Connect(function()
+    task.wait(1)  -- Let the character fully load
+    loopWalkSpeed()
+end)
+
+-- Initial run
+loopWalkSpeed()
