@@ -32,16 +32,12 @@ tool.Equipped:Connect(function()
 		-- Store original position
 		originalCFrame = hrp.CFrame
 
-		-- Save camera state
+		-- Save camera state (optional but harmless)
 		originalCameraCFrame = Camera.CFrame
 		originalCameraType = Camera.CameraType
 		originalCameraSubject = Camera.CameraSubject
 
-		-- Detach and freeze camera
-		Camera.CameraType = Enum.CameraType.Scriptable
-		Camera.CFrame = originalCameraCFrame
-
-		-- TP to null zone
+		-- Teleport to far away location (void)
 		hrp.CFrame = CFrame.new(Vector3.new(1e5, 1e5, 1e5))
 
 		-- Cancel existing momentum
@@ -55,7 +51,7 @@ tool.Equipped:Connect(function()
 		bv.P = 1250
 		bv.Parent = hrp
 
-		-- Connect to death event
+		-- Handle death: restore camera if needed
 		if humanoid then
 			if humanoidDeathConnection then
 				humanoidDeathConnection:Disconnect()
@@ -75,14 +71,14 @@ tool.Unequipped:Connect(function()
 		-- Reset velocity
 		hrp.Velocity = Vector3.zero
 
-		-- Restore position
+		-- Return to original position
 		hrp.CFrame = originalCFrame
 
-		-- Clean up velocity constraint
+		-- Clean up BodyVelocity
 		local bv = hrp:FindFirstChild("RootVelocity")
 		if bv then bv:Destroy() end
 
-		-- Restore camera
+		-- Restore camera state
 		if originalCameraType and originalCameraSubject then
 			Camera.CameraType = originalCameraType
 			Camera.CameraSubject = originalCameraSubject
@@ -91,7 +87,7 @@ tool.Unequipped:Connect(function()
 		end
 	end
 
-	-- Disconnect death listener
+	-- Disconnect death connection
 	if humanoidDeathConnection then
 		humanoidDeathConnection:Disconnect()
 		humanoidDeathConnection = nil
