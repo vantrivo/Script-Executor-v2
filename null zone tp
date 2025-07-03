@@ -1,3 +1,4 @@
+You said:
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -32,12 +33,16 @@ tool.Equipped:Connect(function()
 		-- Store original position
 		originalCFrame = hrp.CFrame
 
-		-- Save camera state (optional but harmless)
+		-- Save camera state
 		originalCameraCFrame = Camera.CFrame
 		originalCameraType = Camera.CameraType
 		originalCameraSubject = Camera.CameraSubject
 
-		-- Teleport to far away location (void)
+		-- Detach and freeze camera
+		Camera.CameraType = Enum.CameraType.Scriptable
+		Camera.CFrame = originalCameraCFrame
+
+		-- TP to null zone
 		hrp.CFrame = CFrame.new(Vector3.new(1e5, 1e5, 1e5))
 
 		-- Cancel existing momentum
@@ -51,7 +56,7 @@ tool.Equipped:Connect(function()
 		bv.P = 1250
 		bv.Parent = hrp
 
-		-- Handle death: restore camera if needed
+		-- Connect to death event
 		if humanoid then
 			if humanoidDeathConnection then
 				humanoidDeathConnection:Disconnect()
@@ -71,14 +76,14 @@ tool.Unequipped:Connect(function()
 		-- Reset velocity
 		hrp.Velocity = Vector3.zero
 
-		-- Return to original position
+		-- Restore position
 		hrp.CFrame = originalCFrame
 
-		-- Clean up BodyVelocity
+		-- Clean up velocity constraint
 		local bv = hrp:FindFirstChild("RootVelocity")
 		if bv then bv:Destroy() end
 
-		-- Restore camera state
+		-- Restore camera
 		if originalCameraType and originalCameraSubject then
 			Camera.CameraType = originalCameraType
 			Camera.CameraSubject = originalCameraSubject
@@ -87,7 +92,7 @@ tool.Unequipped:Connect(function()
 		end
 	end
 
-	-- Disconnect death connection
+	-- Disconnect death listener
 	if humanoidDeathConnection then
 		humanoidDeathConnection:Disconnect()
 		humanoidDeathConnection = nil
