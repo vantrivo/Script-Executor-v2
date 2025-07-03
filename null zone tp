@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
 local tool = Instance.new("Tool")
 tool.Name = "voidTP"
@@ -7,22 +8,45 @@ tool.RequiresHandle = false
 tool.Parent = LocalPlayer:WaitForChild("Backpack")
 
 local originalCFrame = nil
-local velocityResetConnection = nil
+local originalCameraCFrame = nil
+local originalCameraType = nil
+local originalCameraSubject = nil
+local humanoidDeathConnection = nil
+
+local function restoreCamera(character)
+	if Camera.CameraType == Enum.CameraType.Scriptable then
+		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+		if humanoid then
+			Camera.CameraType = Enum.CameraType.Custom
+			Camera.CameraSubject = humanoid
+		end
+	end
+end
 
 tool.Equipped:Connect(function()
 	local character = LocalPlayer.Character
 	if character and character:FindFirstChild("HumanoidRootPart") then
 		local hrp = character.HumanoidRootPart
+		local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+
+		-- Store original position
 		originalCFrame = hrp.CFrame
 
-		-- TP to high above void
+		-- Save camera state
+		originalCameraCFrame = Camera.CFrame
+		originalCameraType = Camera.CameraType
+		originalCameraSubject = Camera.CameraSubject
+
+		-- Detach and freeze camera
+		Camera.CameraType = Enum.CameraType.Scriptable
+		Camera.CFrame = originalCameraCFrame
+
+		-- TP to null zone
 		hrp.CFrame = CFrame.new(Vector3.new(1e5, 1e5, 1e5))
 
 		-- Cancel existing momentum
 		local rootVel = hrp:FindFirstChild("RootVelocity")
-		if rootVel then
-			rootVel:Destroy()
-		end
+		if rootVel then rootVel:Destroy() end
 
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "RootVelocity"
@@ -31,20 +55,45 @@ tool.Equipped:Connect(function()
 		bv.P = 1250
 		bv.Parent = hrp
 
-	
+		-- Connect to death event
+		if humanoid then
+			if humanoidDeathConnection then
+				humanoidDeathConnection:Disconnect()
+			end
+			humanoidDeathConnection = humanoid.Died:Connect(function()
+				restoreCamera(LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
+			end)
+		end
+	end
+end)
+
 tool.Unequipped:Connect(function()
 	local character = LocalPlayer.Character
 	if character and character:FindFirstChild("HumanoidRootPart") and originalCFrame then
 		local hrp = character.HumanoidRootPart
 
-		-- Reset velocity to avoid falling/sliding
+		-- Reset velocity
 		hrp.Velocity = Vector3.zero
 
 		-- Restore position
 		hrp.CFrame = originalCFrame
 
-		-- Clean up any velocity constraint
+		-- Clean up velocity constraint
 		local bv = hrp:FindFirstChild("RootVelocity")
 		if bv then bv:Destroy() end
+
+		-- Restore camera
+		if originalCameraType and originalCameraSubject then
+			Camera.CameraType = originalCameraType
+			Camera.CameraSubject = originalCameraSubject
+		else
+			restoreCamera(character)
+		end
+	end
+
+	-- Disconnect death listener
+	if humanoidDeathConnection then
+		humanoidDeathConnection:Disconnect()
+		humanoidDeathConnection = nil
 	end
 end)
