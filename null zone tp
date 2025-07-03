@@ -16,7 +16,7 @@ tool.Equipped:Connect(function()
 		originalCFrame = hrp.CFrame
 
 		-- TP to high above void
-		hrp.CFrame = CFrame.new(Vector3.new(1e5, 5000, 1e5))
+		hrp.CFrame = CFrame.new(Vector3.new(1e5, 1e5, 1e5))
 
 		-- Cancel existing momentum
 		local rootVel = hrp:FindFirstChild("RootVelocity")
@@ -26,7 +26,7 @@ tool.Equipped:Connect(function()
 
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "RootVelocity"
-		bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+		bv.MaxForce = Vector3.new(1e12, 1e12, 1e12)
 		bv.Velocity = Vector3.zero
 		bv.P = 1250
 		bv.Parent = hrp
