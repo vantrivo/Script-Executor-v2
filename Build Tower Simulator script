@@ -1,0 +1,11 @@
+for i = 1,200 do local args = {
+    [1] = "takeDamage",
+    [2] = {
+        ["target"] = {
+            [1] = workspace.Monsters:GetChildren()[i],
+            [2] = workspace.Monsters:GetChildren()[i],
+            [3] = workspace.Monsters:GetChildren()[i],
+            [4] = workspace.Monsters:GetChildren()[i],
+            [5] = workspace.Monsters:GetChildren()[i], 		    [6] = workspace.Monsters:GetChildren()[i], [7] = workspace.Monsters:GetChildren()[i], [8] = workspace.Monsters:GetChildren()[i], [9] = workspace.Monsters:GetChildren()[i], [10] = workspace.Monsters:GetChildren()[i], [11] = workspace.Monsters:GetChildren()[i], [12] = workspace.Monsters:GetChildren()[i], [13] = workspace.Monsters:GetChildren()[i], [14] = workspace.Monsters:GetChildren()[i], [15] = workspace.Monsters:GetChildren()[i], [16] = workspace.Monsters:GetChildren()[i], [17] = workspace.Monsters:GetChildren()[i], [18] = workspace.Monsters:GetChildren()[i], [19] = workspace.Monsters:GetChildren()[i], [20] = workspace.Monsters:GetChildren()[i], [21] = workspace.Monsters:GetChildren()[i], [22] = workspace.Monsters:GetChildren()[i], [23] = workspace.Monsters:GetChildren()[i], [24] = workspace.Monsters:GetChildren()[i], [25] = workspace.Monsters:GetChildren()[i], [26] = workspace.Monsters:GetChildren()[i], [27] = workspace.Monsters:GetChildren()[i], [28] = workspace.Monsters:GetChildren()[i], [29] = workspace.Monsters:GetChildren()[i], [30] = workspace.Monsters:GetChildren()[i], [31] = workspace.Monsters:GetChildren()[i], [32] = workspace.Monsters:GetChildren()[i], [33] = workspace.Monsters:GetChildren()[i], [34] = workspace.Monsters:GetChildren()[i], [35] = workspace.Monsters:GetChildren()[i], [36] = workspace.Monsters:GetChildren()[i], [37] = workspace.Monsters:GetChildren()[i], [38] = workspace.Monsters:GetChildren()[i], [39] = workspace.Monsters:GetChildren()[i], [40] = workspace.Monsters:GetChildren()[i],
+}, ["toolName"] = "HexSpitter" } }
+game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent"):WaitForChild("WeaponRemoteEvent"):FireServer(unpack(args)) end
