@@ -1,0 +1,160 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local animator = humanoid:FindFirstChildOfClass("Animator")
+local uis = game:GetService("UserInputService")
+
+-- GUI creation
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AnimationGui"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 250)  -- increased height for new box
+frame.Position = UDim2.new(0.5, -125, 0.5, -125)
+frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+frame.Parent = screenGui
+
+local animIdBox = Instance.new("TextBox")
+animIdBox.PlaceholderText = "AnimationId (rbxassetid://...)"
+animIdBox.Size = UDim2.new(1, -20, 0, 30)
+animIdBox.Position = UDim2.new(0,10,0,10)
+animIdBox.Text = ""
+animIdBox.Parent = frame
+
+local intervalBox = Instance.new("TextBox")
+intervalBox.PlaceholderText = "Interval (seconds)"
+intervalBox.Size = UDim2.new(1, -20, 0, 30)
+intervalBox.Position = UDim2.new(0,10,0,50)
+intervalBox.Text = "2"
+intervalBox.Parent = frame
+
+local speedBox = Instance.new("TextBox")
+speedBox.PlaceholderText = "Speed (e.g. 1)"
+speedBox.Size = UDim2.new(1, -20, 0, 30)
+speedBox.Position = UDim2.new(0,10,0,90)
+speedBox.Text = "1"
+speedBox.Parent = frame
+
+local timePosBox = Instance.new("TextBox")
+timePosBox.PlaceholderText = "Start TimePosition (e.g. 0)"
+timePosBox.Size = UDim2.new(1, -20, 0, 30)
+timePosBox.Position = UDim2.new(0,10,0,130)
+timePosBox.Text = "0"
+timePosBox.Parent = frame
+
+local loopButton = Instance.new("TextButton")
+loopButton.Text = "Loop: OFF"
+loopButton.Size = UDim2.new(1, -20, 0, 30)
+loopButton.Position = UDim2.new(0,10,0,170)
+loopButton.BackgroundColor3 = Color3.fromRGB(80,80,80)
+loopButton.Parent = frame
+
+local executeButton = Instance.new("TextButton")
+executeButton.Text = "Execute"
+executeButton.Size = UDim2.new(0.48, -15, 0, 30)
+executeButton.Position = UDim2.new(0,10,0,210)
+executeButton.BackgroundColor3 = Color3.fromRGB(0,170,0)
+executeButton.TextColor3 = Color3.new(1,1,1)
+executeButton.Parent = frame
+
+local stopButton = Instance.new("TextButton")
+stopButton.Text = "Stop"
+stopButton.Size = UDim2.new(0.48, -15, 0, 30)
+stopButton.Position = UDim2.new(0.52,5,0,210)
+stopButton.BackgroundColor3 = Color3.fromRGB(170,0,0)
+stopButton.TextColor3 = Color3.new(1,1,1)
+stopButton.Parent = frame
+
+-- Dragging
+local dragging = false
+local dragInput, startPos, startFramePos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        startPos = input.Position
+        startFramePos = frame.Position
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+uis.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - startPos
+        frame.Position = UDim2.new(
+            startFramePos.X.Scale,
+            startFramePos.X.Offset + delta.X,
+            startFramePos.Y.Scale,
+            startFramePos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+uis.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Logic
+local looping = false
+local playing = false
+local currentTrack = nil
+
+loopButton.MouseButton1Click:Connect(function()
+    looping = not looping
+    loopButton.Text = looping and "Loop: ON" or "Loop: OFF"
+    loopButton.BackgroundColor3 = looping and Color3.fromRGB(0,120,0) or Color3.fromRGB(80,80,80)
+end)
+
+local function playAnimation(animId, interval, speed, startPos)
+    if playing then return end
+    playing = true
+    repeat
+        if currentTrack then
+            currentTrack:Stop()
+            currentTrack:Destroy()
+        end
+        local animation = Instance.new("Animation")
+        animation.AnimationId = animId
+        currentTrack = animator:LoadAnimation(animation)
+        currentTrack:Play()
+
+        task.wait(0.09) -- wait before adjusting timeposition and speed
+        if currentTrack then
+            currentTrack.TimePosition = startPos or 0
+            currentTrack:AdjustSpeed(speed)
+        end
+
+        if not looping then break end
+        task.wait(interval)
+    until not looping or not playing
+    playing = false
+end
+
+executeButton.MouseButton1Click:Connect(function()
+    local animId = animIdBox.Text
+    local interval = tonumber(intervalBox.Text) or 2
+    local speed = tonumber(speedBox.Text) or 1
+    local startPos = tonumber(timePosBox.Text) or 0
+    if string.sub(animId,1,13) ~= "rbxassetid://" then
+        animId = "rbxassetid://"..animId
+    end
+    playAnimation(animId, interval, speed, startPos)
+end)
+
+stopButton.MouseButton1Click:Connect(function()
+    playing = false
+    if currentTrack then
+        currentTrack:Stop()
+        currentTrack:Destroy()
+        currentTrack = nil
+    end
+end)
