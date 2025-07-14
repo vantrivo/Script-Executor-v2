@@ -1,0 +1,84 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Function to add highlight & billboard
+local function decorateCharacter(player, character)
+	-- Highlight
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "PlayerHighlight"
+	highlight.Parent = character
+
+	-- BillboardGui (smaller)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "NameBillboard"
+	billboard.Adornee = character:FindFirstChild("Head")
+	billboard.Size = UDim2.new(0, 100, 0, 20)  -- smaller size
+	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = character
+
+	-- TextLabel (small font)
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.new(1, 0, 1, 0)
+	textLabel.BackgroundTransparency = 1
+	textLabel.TextScaled = false           -- use fixed size
+	textLabel.TextSize = 16                -- small font size
+	textLabel.Font = Enum.Font.SourceSansBold
+	textLabel.TextStrokeTransparency = 0
+	textLabel.RichText = true
+	textLabel.Parent = billboard
+
+	-- Username color: green if friend, blue if not
+	local isFriend = false
+	pcall(function()
+		isFriend = LocalPlayer:IsFriendsWith(player.UserId)
+	end)
+
+	local usernameColor = isFriend and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 170, 255)
+	local hpColor = Color3.fromRGB(255, 0, 0)
+
+	-- Function to update safely
+	local function updateText()
+		if not textLabel.Parent then return end -- label got destroyed
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local hp = humanoid and math.floor(humanoid.Health) or "N/A"
+		textLabel.Text = string.format(
+			'<font color="rgb(%d,%d,%d)">%s</font> | <font color="rgb(%d,%d,%d)">HP: %s</font>',
+			usernameColor.R * 255, usernameColor.G * 255, usernameColor.B * 255, player.Name,
+			hpColor.R * 255, hpColor.G * 255, hpColor.B * 255, tostring(hp)
+		)
+	end
+
+	-- Connect health update safely
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		local conn
+		conn = humanoid.HealthChanged:Connect(function()
+			if textLabel.Parent then
+				updateText()
+			else
+				conn:Disconnect()
+			end
+		end)
+		updateText()
+	else
+		updateText()
+	end
+end
+
+-- Setup for existing & future players
+local function setupPlayer(player)
+	player.CharacterAdded:Connect(function(character)
+		character:WaitForChild("Head", 5)
+		decorateCharacter(player, character)
+	end)
+	if player.Character then
+		decorateCharacter(player, player.Character)
+	end
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+	setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
