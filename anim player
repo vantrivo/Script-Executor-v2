@@ -67,20 +67,26 @@ stopButton.BackgroundColor3 = Color3.fromRGB(170,0,0)
 stopButton.TextColor3 = Color3.new(1,1,1)
 stopButton.Parent = frame
 
--- Dragging
+-- Dragging for mobile (touch input) only
 local dragging = false
 local dragInput, startPos, startFramePos
 
 frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         startPos = input.Position
         startFramePos = frame.Position
+        dragInput = input
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
 
 frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
+    if input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
@@ -94,12 +100,6 @@ uis.InputChanged:Connect(function(input)
             startFramePos.Y.Scale,
             startFramePos.Y.Offset + delta.Y
         )
-    end
-end)
-
-uis.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
     end
 end)
 
