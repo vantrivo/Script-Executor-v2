@@ -1,4 +1,4 @@
---loadstring(game:HttpGet(”https://raw.githubusercontent.com/vantrivo/Script-Executor-v2/main/Scriptexecutor”)
+--loadstring(game:HttpGet("https://raw.githubusercontent.com/vantrivo/Script-Executor-v2/main/Scriptexecutor"))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -43,7 +43,7 @@ TitleLabel.Parent = TitleBar
 -- Tabs
 local TabButtons = {}
 local ActiveTab = 1
-local tabCount = 5
+local tabCount = 10
 local tabNames = {}
 for i = 1, tabCount do
     tabNames[i] = "slot " .. i
