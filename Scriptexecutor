@@ -18,7 +18,7 @@ MainFrame.Size = UDim2.new(0, 400, 0, 300)
 MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MainFrame.BorderSizePixel = 0
-UICorner = Instance.new("UICorner", MainFrame)
+Instance.new("UICorner", MainFrame)
 MainFrame.Parent = ScreenGui
 
 -- Title Bar
@@ -27,7 +27,7 @@ TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 30)
 TitleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 TitleBar.BorderSizePixel = 0
-UICorner2 = Instance.new("UICorner", TitleBar)
+Instance.new("UICorner", TitleBar)
 TitleBar.Parent = MainFrame
 
 local TitleLabel = Instance.new("TextLabel")
@@ -40,10 +40,21 @@ TitleLabel.TextSize = 18
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.Parent = TitleBar
 
+-- Tab Bar (Scrolling Frame)
+local TabBar = Instance.new("ScrollingFrame")
+TabBar.Name = "TabBar"
+TabBar.Size = UDim2.new(1, 0, 0, 30)  -- Full width, 30 px height
+TabBar.Position = UDim2.new(0, 0, 0, 30) -- directly below TitleBar
+TabBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TabBar.BorderSizePixel = 0
+TabBar.ScrollBarThickness = 4
+TabBar.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
+TabBar.Parent = MainFrame
+
 -- Tabs
 local TabButtons = {}
 local ActiveTab = 1
-local tabCount = 10
+local tabCount = 20
 local tabNames = {}
 for i = 1, tabCount do
     tabNames[i] = "slot " .. i
@@ -51,17 +62,21 @@ end
 
 local ScriptBoxes = {}
 
+local tabWidth = 90
+local tabHeight = 26
+local tabPadding = 2
+
 for i = 1, tabCount do
     local tab = Instance.new("TextButton")
     tab.Name = "Tab" .. i
-    tab.Size = UDim2.new(0, 100, 0, 30)
-    tab.Position = UDim2.new(0, (i - 1) * 100, 0, 30)
+    tab.Size = UDim2.new(0, tabWidth, 0, tabHeight)
+    tab.Position = UDim2.new(0, (i - 1) * (tabWidth + tabPadding), 0, tabPadding)
     tab.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     tab.Text = tabNames[i]
     tab.TextColor3 = Color3.fromRGB(255, 255, 255)
     tab.TextSize = 14
     tab.Font = Enum.Font.SourceSansBold
-    tab.Parent = MainFrame
+    tab.Parent = TabBar
 
     tab.MouseButton1Click:Connect(function()
         for j, box in pairs(ScriptBoxes) do
@@ -74,6 +89,8 @@ for i = 1, tabCount do
 
     table.insert(TabButtons, tab)
 end
+
+TabBar.CanvasSize = UDim2.new(0, tabCount * (tabWidth + tabPadding), 0, 0)
 
 -- Script Boxes
 for i = 1, tabCount do
@@ -146,7 +163,7 @@ AddLineButton.Parent = MainFrame
 local SaveButton = Instance.new("TextButton")
 SaveButton.Name = "SaveButton"
 SaveButton.Size = UDim2.new(0, 100, 0, 30)
-SaveButton.Position = UDim2.new(0, 10, 1, -80)
+SaveButton.Position = UDim2.new(0, 10, 1, -80)  -- Save back to original position
 SaveButton.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
 SaveButton.Text = "Save"
 SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -157,7 +174,7 @@ SaveButton.Parent = MainFrame
 local LoadButton = Instance.new("TextButton")
 LoadButton.Name = "LoadButton"
 LoadButton.Size = UDim2.new(0, 100, 0, 30)
-LoadButton.Position = UDim2.new(0, 120, 1, -80)
+LoadButton.Position = UDim2.new(0, 120, 1, -80)  -- Load back to original position
 LoadButton.BackgroundColor3 = Color3.fromRGB(180, 100, 0)
 LoadButton.Text = "Load"
 LoadButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -165,11 +182,11 @@ LoadButton.TextSize = 16
 LoadButton.Font = Enum.Font.SourceSansBold
 LoadButton.Parent = MainFrame
 
--- Toggle & Close
+-- Toggle & Close (reposition as you liked)
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0.5, -25, 0.2, -25)
+ToggleButton.Position = UDim2.new(0.5, -25, 0.1, -25)  -- Slightly up from before
 ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 ToggleButton.Text = "open"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -179,9 +196,9 @@ ToggleButton.BackgroundTransparency = 0.5
 ToggleButton.Parent = ScreenGui
 
 local XB = Instance.new("TextButton")
-XB.Name = "XButon"
+XB.Name = "XButton"
 XB.Size = UDim2.new(0, 50, 0, 50)
-XB.Position = UDim2.new(0.4, -25, 0.2, -25)
+XB.Position = UDim2.new(0.4, -25, 0.1, -25)  -- Slightly up from before
 XB.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
 XB.Text = "X"
 XB.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -198,7 +215,7 @@ XB.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Drag
+-- Drag logic (unchanged)
 local dragging, dragInput, dragStart, startPos
 
 local function updateInput(input)
@@ -232,7 +249,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Button logic
+-- Button logic (unchanged)
 ExecuteButton.MouseButton1Click:Connect(function()
     local script = ScriptBoxes[ActiveTab].Text
     if script and script ~= "" then
