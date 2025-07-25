@@ -37,22 +37,57 @@ TitleLabel.TextSize = 18
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.Parent = TitleBar
 
--- Script Box 
-local ScriptBox = Instance.new("TextBox")
-ScriptBox.Name = "ScriptBox"
-ScriptBox.Size = UDim2.new(1, -20, 1, -80)
-ScriptBox.Position = UDim2.new(0, 10, 0, 40)
-ScriptBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ScriptBox.BorderSizePixel = 0
-ScriptBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-ScriptBox.TextSize = 14
-ScriptBox.Font = Enum.Font.Code
-ScriptBox.TextXAlignment = Enum.TextXAlignment.Left
-ScriptBox.TextYAlignment = Enum.TextYAlignment.Top
-ScriptBox.ClearTextOnFocus = false
-ScriptBox.MultiLine = true  -- Enable multi-line input
-ScriptBox.PlaceholderText = "Enter your script here..."
-ScriptBox.Parent = MainFrame
+-- Tabs
+local TabButtons = {}
+local ActiveTab = 1
+local tabCount = 3
+local tabNames = {"Tab 1", "Tab 2", "Tab 3"}
+local ScriptBoxes = {}
+
+for i = 1, tabCount do
+    local tab = Instance.new("TextButton")
+    tab.Name = "Tab" .. i
+    tab.Size = UDim2.new(0, 100, 0, 30)
+    tab.Position = UDim2.new(0, (i - 1) * 100, 0, 30)
+    tab.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    tab.Text = tabNames[i]
+    tab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tab.TextSize = 14
+    tab.Font = Enum.Font.SourceSansBold
+    tab.Parent = MainFrame
+
+    tab.MouseButton1Click:Connect(function()
+        for j, box in pairs(ScriptBoxes) do
+            box.Visible = (j == i)
+        end
+        ActiveTab = i
+        ErrorDisplay.Text = "Switched to " .. tabNames[i]
+        ErrorDisplay.TextColor3 = Color3.fromRGB(0, 200, 255)
+    end)
+
+    table.insert(TabButtons, tab)
+end
+
+-- Script Boxes
+for i = 1, tabCount do
+    local box = Instance.new("TextBox")
+    box.Name = "ScriptBox" .. i
+    box.Size = UDim2.new(1, -20, 1, -140)
+    box.Position = UDim2.new(0, 10, 0, 70)
+    box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    box.BorderSizePixel = 0
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.TextSize = 14
+    box.Font = Enum.Font.Code
+    box.TextXAlignment = Enum.TextXAlignment.Left
+    box.TextYAlignment = Enum.TextYAlignment.Top
+    box.ClearTextOnFocus = false
+    box.MultiLine = true
+    box.PlaceholderText = "Enter your script here for " .. tabNames[i]
+    box.Visible = (i == 1)
+    box.Parent = MainFrame
+    ScriptBoxes[i] = box
+end
 
 -- Error Display 
 local ErrorDisplay = Instance.new("TextLabel")
@@ -67,7 +102,7 @@ ErrorDisplay.Text = ""
 ErrorDisplay.TextWrapped = true
 ErrorDisplay.Parent = MainFrame
 
--- Execute Button
+-- Buttons
 local ExecuteButton = Instance.new("TextButton")
 ExecuteButton.Name = "ExecuteButton"
 ExecuteButton.Size = UDim2.new(0, 100, 0, 30)
@@ -79,7 +114,6 @@ ExecuteButton.TextSize = 16
 ExecuteButton.Font = Enum.Font.SourceSansBold
 ExecuteButton.Parent = MainFrame
 
--- Clear Button
 local ClearButton = Instance.new("TextButton")
 ClearButton.Name = "ClearButton"
 ClearButton.Size = UDim2.new(0, 100, 0, 30)
@@ -91,24 +125,45 @@ ClearButton.TextSize = 16
 ClearButton.Font = Enum.Font.SourceSansBold
 ClearButton.Parent = MainFrame
 
--- Add New Line Button 
 local AddLineButton = Instance.new("TextButton")
 AddLineButton.Name = "AddLineButton"
 AddLineButton.Size = UDim2.new(0, 100, 0, 30)
-AddLineButton.Position = UDim2.new(0, 230, 1, -40)  -- Place it next to Clear button
-AddLineButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green color
+AddLineButton.Position = UDim2.new(0, 230, 1, -40)
+AddLineButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 AddLineButton.Text = "Add Line"
 AddLineButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 AddLineButton.TextSize = 16
 AddLineButton.Font = Enum.Font.SourceSansBold
 AddLineButton.Parent = MainFrame
 
--- Circular Movable Toggle Button (Green)
+local SaveButton = Instance.new("TextButton")
+SaveButton.Name = "SaveButton"
+SaveButton.Size = UDim2.new(0, 100, 0, 30)
+SaveButton.Position = UDim2.new(0, 10, 1, -80)
+SaveButton.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
+SaveButton.Text = "Save"
+SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveButton.TextSize = 16
+SaveButton.Font = Enum.Font.SourceSansBold
+SaveButton.Parent = MainFrame
+
+local LoadButton = Instance.new("TextButton")
+LoadButton.Name = "LoadButton"
+LoadButton.Size = UDim2.new(0, 100, 0, 30)
+LoadButton.Position = UDim2.new(0, 120, 1, -80)
+LoadButton.BackgroundColor3 = Color3.fromRGB(180, 100, 0)
+LoadButton.Text = "Load"
+LoadButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadButton.TextSize = 16
+LoadButton.Font = Enum.Font.SourceSansBold
+LoadButton.Parent = MainFrame
+
+-- Toggle & Close
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0.5, -25, 0.2, -25)  -- Start in the middle of the screen
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Green color
+ToggleButton.Position = UDim2.new(0.5, -25, 0.2, -25)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 ToggleButton.Text = "open"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.TextSize = 14
@@ -119,8 +174,8 @@ ToggleButton.Parent = ScreenGui
 local XB = Instance.new("TextButton")
 XB.Name = "XButon"
 XB.Size = UDim2.new(0, 50, 0, 50)
-XB.Position = UDim2.new(0.4, -25, 0.2, -25)  -- Start in the middle of the screen
-XB.BackgroundColor3 = Color3.fromRGB(100, 0, 0)  -- Green color
+XB.Position = UDim2.new(0.4, -25, 0.2, -25)
+XB.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
 XB.Text = "X"
 XB.TextColor3 = Color3.fromRGB(255, 255, 255)
 XB.TextSize = 14
@@ -128,17 +183,16 @@ XB.Font = Enum.Font.SourceSansBold
 XB.BackgroundTransparency = 0.5
 XB.Parent = ScreenGui
 
-
 ToggleButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
+XB.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
--- Draggable MainFrame
-local dragging
-local dragInput
-local dragStart
-local startPos
+-- Drag
+local dragging, dragInput, dragStart, startPos
 
 local function updateInput(input)
     local delta = input.Position - dragStart
@@ -171,45 +225,78 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Execute Button executes
+-- Button logic
 ExecuteButton.MouseButton1Click:Connect(function()
-    local script = ScriptBox.Text
+    local script = ScriptBoxes[ActiveTab].Text
     if script and script ~= "" then
         local success, err = pcall(function()
             loadstring(script)()
         end)
         if success then
-            ErrorDisplay.Text = "Script executed successfully."
-            ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 0)  -- Green for success
+            ErrorDisplay.Text = "Script from " .. tabNames[ActiveTab] .. " executed successfully."
+            ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 0)
         else
-            ErrorDisplay.Text = "Error: " .. tostring(err)
-            ErrorDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)  -- Red for error
+            ErrorDisplay.Text = "Error in " .. tabNames[ActiveTab] .. ": " .. tostring(err)
+            ErrorDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
     else
-        ErrorDisplay.Text = "No script to execute."
-        ErrorDisplay.TextColor3 = Color3.fromRGB(255, 165, 0)  -- Orange for warning
+        ErrorDisplay.Text = "No script to execute in " .. tabNames[ActiveTab] .. "."
+        ErrorDisplay.TextColor3 = Color3.fromRGB(255, 165, 0)
     end
 end)
 
--- Clear Button Functionality
 ClearButton.MouseButton1Click:Connect(function()
-    ScriptBox.Text = ""
-    ErrorDisplay.Text = "cleared"
+    ScriptBoxes[ActiveTab].Text = ""
+    ErrorDisplay.Text = "Cleared " .. tabNames[ActiveTab]
 end)
 
--- Clear Button Functionality
-XB.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- make Line Button
 local lineCounter = 1
 AddLineButton.MouseButton1Click:Connect(function()
-    local currentText = ScriptBox.Text
-    ScriptBox.Text = currentText .. "\n --line " .. lineCounter  -- Add a new line with a comment
-    lineCounter = lineCounter + 1 ErrorDisplay.Text = "Added Line"
+    local currentText = ScriptBoxes[ActiveTab].Text
+    ScriptBoxes[ActiveTab].Text = currentText .. "\n --line " .. lineCounter
+    lineCounter += 1
+    ErrorDisplay.Text = "Added line to " .. tabNames[ActiveTab]
 end)
 
--- wow
+-- File Save/Load (for Delta)
+local folderName = "TrivoExecutorTabs"
+
+if makefolder and not isfolder(folderName) then
+    makefolder(folderName)
+end
+
+local function getFileName(tabIndex)
+    return folderName .. "/tab" .. tabIndex .. ".txt"
+end
+
+SaveButton.MouseButton1Click:Connect(function()
+    if not writefile then
+        ErrorDisplay.Text = "writefile not supported on this executor."
+        ErrorDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)
+        return
+    end
+    local fileName = getFileName(ActiveTab)
+    writefile(fileName, ScriptBoxes[ActiveTab].Text)
+    ErrorDisplay.Text = "Saved to " .. fileName
+    ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 100)
+end)
+
+LoadButton.MouseButton1Click:Connect(function()
+    if not readfile or not isfile then
+        ErrorDisplay.Text = "readfile not supported on this executor."
+        ErrorDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)
+        return
+    end
+    local fileName = getFileName(ActiveTab)
+    if isfile(fileName) then
+        ScriptBoxes[ActiveTab].Text = readfile(fileName)
+        ErrorDisplay.Text = "Loaded from " .. fileName
+        ErrorDisplay.TextColor3 = Color3.fromRGB(100, 255, 255)
+    else
+        ErrorDisplay.Text = "No file found for " .. tabNames[ActiveTab]
+        ErrorDisplay.TextColor3 = Color3.fromRGB(255, 165, 0)
+    end
+end)
+
 ErrorDisplay.Text = "Script Executor successfully loaded."
 ErrorDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
