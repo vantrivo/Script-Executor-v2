@@ -4,7 +4,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))() loca
    LoadingTitle = "Rayfield Interface Suite",
    LoadingSubtitle = "by Sirius",
    ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
-   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+   Theme = "Ocean", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
 
@@ -66,4 +66,33 @@ for i = 1, 1 do local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("GambleEvent"):FireServer(unpack(args))
 end
    end,
+}) local Toggle = chanced:CreateToggle({
+    Name = "pizza rain",
+    CurrentValue = false,
+    Flag = "LoopToggle",
+    Callback = function(state)
+        if state then
+            task.spawn(function()
+                while true do
+                    if not Rayfield.Flags["LoopToggle"].CurrentValue then
+                        break
+                    end
+
+             
+        game:GetService("ReplicatedStorage").SpawnPizzaBombEvent:FireServer() 
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
 })
+
+local pzButton = chanced:CreateButton({
+   Name = "PIZZA CRASH.",
+   Callback = function()  
+for i = 1,1500 do game:GetService("ReplicatedStorage").SpawnPizzaBombEvent:FireServer() end
+   end,
+}) 
+
+   
