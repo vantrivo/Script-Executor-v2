@@ -89,8 +89,9 @@ end
 })
 
 local pzButton = chanced:CreateButton({
-   Name = "PIZZA CRASH.",
-   Callback = function()  
+   Name = "Time stops now.",
+   Callback = function() local NotificationLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/lobox920/Notification-Library/Main/Library.lua"))()
+NotificationLibrary:SendNotification("Success", "Time has been stopped.", 15.8)
 for i = 1,1500 do game:GetService("ReplicatedStorage").SpawnPizzaBombEvent:FireServer() end
    end,
 }) 
