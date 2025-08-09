@@ -1,0 +1,379 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+
+local CONFIG = {
+    StartRadius = 15,
+    TargetRadius = -15,
+    Speed = 15,
+    Segments = 25,
+    PartSize = Vector3.new(1, 1, 1),
+    PartColor = Color3.fromRGB(159, 243, 233),
+    PartMaterial = Enum.Material.Glass,
+    RotationDegrees = -45,
+    PartClassId = 9,
+    PartType = "Normal",
+    ParentContainer = workspace,
+    PartTransparency = 0,
+}
+
+local screenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+screenGui.Name = "CircleBuilderGui"
+
+local frame = Instance.new("Frame", screenGui)
+frame.AnchorPoint = Vector2.new(0.5, 0)
+frame.Position = UDim2.new(0.5, 0, 0, 50)
+frame.Size = UDim2.new(0, 500, 0, 320)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Visible = false
+
+local openButton = Instance.new("TextButton", screenGui)
+openButton.Name = "OpenButton"
+openButton.Size = UDim2.new(0, 80, 0, 30)
+openButton.Position = UDim2.new(0, 10, 0, 10)
+openButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+openButton.TextColor3 = Color3.new(1, 1, 1)
+openButton.Text = "Open"
+openButton.Font = Enum.Font.SourceSansBold
+openButton.TextSize = 20
+
+local dragging, dragInput, dragStart, startPos
+local function updatePosition(input)
+    local delta = input.Position - dragStart
+    openButton.Position = UDim2.new(
+        0,
+        math.clamp(startPos.X + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - openButton.AbsoluteSize.X),
+        0,
+        math.clamp(startPos.Y + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - openButton.AbsoluteSize.Y)
+    )
+end
+
+openButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = openButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+openButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updatePosition(input)
+    end
+end)
+
+openButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+local function createLabel(parent, text, pos)
+    local lbl = Instance.new("TextLabel", parent)
+    lbl.Size = UDim2.new(0, 140, 0, 25)
+    lbl.Position = pos
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.Text = text
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Font = Enum.Font.SourceSans
+    lbl.TextSize = 18
+    return lbl
+end
+
+local function createTextBox(parent, defaultText, pos)
+    local tb = Instance.new("TextBox", parent)
+    tb.Size = UDim2.new(0, 120, 0, 25)
+    tb.Position = pos
+    tb.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    tb.TextColor3 = Color3.new(1, 1, 1)
+    tb.Text = tostring(defaultText)
+    tb.ClearTextOnFocus = false
+    tb.Font = Enum.Font.SourceSans
+    tb.TextSize = 18
+    return tb
+end
+
+local uiFields = {}
+uiFields.StartRadius = createTextBox(frame, CONFIG.StartRadius, UDim2.new(0, 150, 0, 10))
+createLabel(frame, "Start Radius:", UDim2.new(0, 10, 0, 10))
+uiFields.MaterialInput = createTextBox(frame, CONFIG.PartMaterial.Name, UDim2.new(0, 350, 0, 10))
+createLabel(frame, "Material:", UDim2.new(0, 280, 0, 10))
+uiFields.Transparency = createTextBox(frame, CONFIG.PartTransparency, UDim2.new(0, 150, 0, 50))
+createLabel(frame, "Transparency (0-1):", UDim2.new(0, 10, 0, 50))
+
+local confirmButton = Instance.new("TextButton", frame)
+confirmButton.Size = UDim2.new(0, 120, 0, 40)
+confirmButton.Position = UDim2.new(0.5, -60, 0, 90)
+confirmButton.Text = "Confirm"
+confirmButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+confirmButton.TextColor3 = Color3.new(1, 1, 1)
+confirmButton.Font = Enum.Font.SourceSansBold
+confirmButton.TextSize = 22
+
+uiFields.TargetRadius = createTextBox(frame, CONFIG.TargetRadius, UDim2.new(0, 150, 0, 130))
+createLabel(frame, "Target Radius:", UDim2.new(0, 10, 0, 130))
+uiFields.Speed = createTextBox(frame, CONFIG.Speed, UDim2.new(0, 150, 0, 160))
+createLabel(frame, "Speed (studs/s):", UDim2.new(0, 10, 0, 160))
+uiFields.Segments = createTextBox(frame, CONFIG.Segments, UDim2.new(0, 150, 0, 190))
+createLabel(frame, "Segments:", UDim2.new(0, 10, 0, 190))
+uiFields.PartSize = createTextBox(frame, "1,1,1", UDim2.new(0, 150, 0, 220))
+createLabel(frame, "Part Size (x,y,z):", UDim2.new(0, 10, 0, 220))
+uiFields.PartColor = createTextBox(frame, "159,243,233", UDim2.new(0, 150, 0, 250))
+createLabel(frame, "Part Color (R,G,B):", UDim2.new(0, 10, 0, 250))
+uiFields.ClassId = createTextBox(frame, CONFIG.PartClassId, UDim2.new(0, 150, 0, 280))
+createLabel(frame, "ClassId:", UDim2.new(0, 10, 0, 280))
+
+local targetLabel = createLabel(frame, "Target:", UDim2.new(0, 10, 0, 310))
+local targetSelection = "Self"
+local selfButton = Instance.new("TextButton", frame)
+selfButton.Size = UDim2.new(0, 90, 0, 30)
+selfButton.Position = UDim2.new(0, 150, 0, 310)
+selfButton.Text = "Self"
+selfButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+selfButton.TextColor3 = Color3.new(1, 1, 1)
+local closestButton = Instance.new("TextButton", frame)
+closestButton.Size = UDim2.new(0, 90, 0, 30)
+closestButton.Position = UDim2.new(0, 250, 0, 310)
+closestButton.Text = "Closest"
+closestButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+closestButton.TextColor3 = Color3.new(1, 1, 1)
+
+local function updateTargetSelection(newTarget)
+    targetSelection = newTarget
+    if newTarget == "Self" then
+        selfButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        closestButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    else
+        selfButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        closestButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+end
+
+selfButton.MouseButton1Click:Connect(function()
+    updateTargetSelection("Self")
+end)
+closestButton.MouseButton1Click:Connect(function()
+    updateTargetSelection("Closest")
+end)
+
+local function findClosestPlayer()
+    local closest, closestDist = nil, math.huge
+    local lpChar = lp.Character
+    local lpHrp = lpChar and lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHrp then return nil end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local char = plr.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+        if plr ~= lp and hrp and hum and hum.Health > 0 then
+            local dist = (lpHrp.Position - hrp.Position).Magnitude
+            if dist < closestDist then
+                closest = plr
+                closestDist = dist
+            end
+        end
+    end
+    return closest
+end
+
+local function parseVector3(str)
+    local parts = {}
+    for val in string.gmatch(str, "([^,]+)") do
+        table.insert(parts, tonumber(val))
+    end
+    if #parts == 3 then
+        return Vector3.new(parts[1], parts[2], parts[3])
+    else
+        return Vector3.new(1, 1, 1)
+    end
+end
+
+local function parseColor3(str)
+    local parts = {}
+    for val in string.gmatch(str, "([^,]+)") do
+        table.insert(parts, tonumber(val))
+    end
+    if #parts == 3 then
+        return Color3.fromRGB(parts[1], parts[2], parts[3])
+    else
+        return Color3.fromRGB(159, 243, 233)
+    end
+end
+
+local function buildCircleFollowPlayer(targetPlayer)
+    local char = targetPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local buildingTools = lp.Character and lp.Character:FindFirstChild("Building Tools")
+    if not hrp or not buildingTools then return end
+
+    local server = buildingTools.SyncAPI.ServerEndpoint
+    local spawnedParts = {}
+
+    for i = 1, CONFIG.Segments do
+        local angle = (math.pi * 2 / CONFIG.Segments) * i
+        local x = math.cos(angle) * CONFIG.StartRadius
+        local z = math.sin(angle) * CONFIG.StartRadius
+        local basePos = hrp.Position + Vector3.new(x, 0, z)
+
+        local rot = CFrame.Angles(0, math.rad(CONFIG.RotationDegrees), 0)
+        local posCFrame = CFrame.new(basePos, hrp.Position) * rot
+
+        local createArgs = {
+            [1] = "CreatePart1",
+            [2] = CONFIG.PartType,
+            [3] = posCFrame,
+            [4] = CONFIG.ParentContainer
+        }
+
+        local part = server:InvokeServer(unpack(createArgs))
+        if part and part:IsA("BasePart") then
+            table.insert(spawnedParts, part)
+        end
+    end
+
+    local configureData = {}
+    for _, part in ipairs(spawnedParts) do
+        table.insert(configureData, {
+            ["Part"] = part,
+            ["ClassId"] = CONFIG.PartClassId,
+        })
+    end
+    server:InvokeServer("SyncConfigure", configureData)
+
+    local resizeData = {}
+    for _, part in ipairs(spawnedParts) do
+        table.insert(resizeData, {
+            ["Part"] = part,
+            ["CFrame"] = part.CFrame,
+            ["Size"] = CONFIG.PartSize,
+        })
+    end
+    server:InvokeServer("SyncResize1", resizeData)
+
+    local colorData = {}
+    for _, part in ipairs(spawnedParts) do
+        table.insert(colorData, {
+            ["Part"] = part,
+            ["UnionColoring"] = true,
+            ["Color"] = CONFIG.PartColor,
+        })
+    end
+    server:InvokeServer("SyncColor1", colorData)
+
+    local appearanceData = {}
+    for _, part in ipairs(spawnedParts) do
+        table.insert(appearanceData, {
+            ["Part"] = part,
+            ["Material"] = CONFIG.PartMaterial,
+            ["Transparency"] = CONFIG.PartTransparency,
+        })
+    end
+    server:InvokeServer("SyncAppearance1", appearanceData)
+
+    local currentRadius = CONFIG.StartRadius
+    local moving = true
+
+    local function stop()
+        moving = false
+    end
+
+    if char:FindFirstChild("Humanoid") then
+        char.Humanoid.Died:Connect(stop)
+    end
+
+    buildingTools.AncestryChanged:Connect(function(_, parent)
+        if not parent then stop() end
+    end)
+
+    local conn
+    conn = RunService.Heartbeat:Connect(function(dt)
+        if not moving then
+            conn:Disconnect()
+            return
+        end
+
+        if not hrp.Parent then
+            stop()
+            return
+        end
+
+        currentRadius = math.max(CONFIG.TargetRadius, currentRadius - CONFIG.Speed * dt)
+
+        local moveData = {}
+
+        for i, part in ipairs(spawnedParts) do
+            local angle = (math.pi * 2 / #spawnedParts) * i
+            local x = math.cos(angle) * currentRadius
+            local z = math.sin(angle) * currentRadius
+            local pos = hrp.Position + Vector3.new(x, 0, z)
+
+            local rot = CFrame.Angles(0, math.rad(CONFIG.RotationDegrees), 0)
+            local newCFrame = CFrame.new(pos, hrp.Position) * rot
+
+            table.insert(moveData, {
+                ["Part"] = part,
+                ["CFrame"] = newCFrame,
+            })
+        end
+
+        server:InvokeServer("SyncMove1", moveData)
+
+        if currentRadius <= CONFIG.TargetRadius then
+            moving = false
+            conn:Disconnect()
+            for _, part in ipairs(spawnedParts) do
+                server:InvokeServer("Remove1", { part })
+            end
+        end
+    end)
+end
+
+confirmButton.MouseButton1Click:Connect(function()
+    local success
+    success, CONFIG.StartRadius = pcall(function() return tonumber(uiFields.StartRadius.Text) end)
+    if not success or not CONFIG.StartRadius then CONFIG.StartRadius = 15 end
+
+    success, CONFIG.TargetRadius = pcall(function() return tonumber(uiFields.TargetRadius.Text) end)
+    if not success or not CONFIG.TargetRadius then CONFIG.TargetRadius = -15 end
+
+    success, CONFIG.Speed = pcall(function() return tonumber(uiFields.Speed.Text) end)
+    if not success or not CONFIG.Speed then CONFIG.Speed = 15 end
+
+    success, CONFIG.Segments = pcall(function() return tonumber(uiFields.Segments.Text) end)
+    if not success or not CONFIG.Segments then CONFIG.Segments = 25 end
+
+    CONFIG.PartSize = parseVector3(uiFields.PartSize.Text)
+    CONFIG.PartColor = parseColor3(uiFields.PartColor.Text)
+
+    success, CONFIG.PartClassId = pcall(function() return tonumber(uiFields.ClassId.Text) end)
+    if not success or not CONFIG.PartClassId then CONFIG.PartClassId = 9 end
+
+    local materialName = uiFields.MaterialInput.Text:gsub("%s+", "")
+    if Enum.Material[materialName] then
+        CONFIG.PartMaterial = Enum.Material[materialName]
+    else
+        CONFIG.PartMaterial = Enum.Material.Glass
+    end
+
+    local transparencyVal = tonumber(uiFields.Transparency.Text)
+    if transparencyVal and transparencyVal >= 0 and transparencyVal <= 1 then
+        CONFIG.PartTransparency = transparencyVal
+    else
+        CONFIG.PartTransparency = 0
+    end
+
+    local targetPlayer = targetSelection == "Self" and lp or findClosestPlayer() or lp
+    if targetPlayer then
+        buildCircleFollowPlayer(targetPlayer)
+    end
+end)
