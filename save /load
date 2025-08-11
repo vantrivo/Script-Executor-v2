@@ -1,0 +1,487 @@
+-- UPDATED IMPORTER (shape-aware creation)
+local Players = game:GetService("Players")
+local workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+-- CONFIG
+local BATCH_SIZE = 75
+local VALIDATION_DELAY = 0.6
+local MAX_RETRIES = 10
+local DEFAULT_TIMEOUT = 1
+local SHOW_TIME_AFTER_DONE = 3
+
+-- Paste your exported parts table string here:
+local exportedPartsStr = [[
+
+return {
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(2048.000000, 1.000000, 2048.000000),
+        Color = Color3.new(0.356863, 0.356863, 0.356863),
+        Material = "Plastic",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(42.697636, 3.199999, -21.586664, -0.064313, -0.000000, -0.997930, 0.000000, 1.000000, -0.000000, 0.997930, -0.000000, -0.064313),
+        Size = Vector3.new(1.400000, 1.800000, 0.850000),
+        Color = Color3.new(0.639216, 0.635294, 0.647059),
+        Material = "Plastic",
+        Transparency = 1.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(44.840950, 3.174059, -20.333384, -0.126348, 0.263136, -0.956449, 0.100618, 0.962603, 0.251537, 0.986870, -0.064455, -0.148099),
+        Size = Vector3.new(0.800000, 0.800000, 0.800000),
+        Color = Color3.new(0.015686, 0.686275, 0.925490),
+        Material = "SmoothPlastic",
+        Transparency = 0.000000,
+        CanCollide = false,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(2048.000000, 1.000000, 2048.000000),
+        Color = Color3.new(0.356863, 0.356863, 0.356863),
+        Material = "Plastic",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(2048.000000, 1.000000, 2048.000000),
+        Color = Color3.new(0.356863, 0.356863, 0.356863),
+        Material = "Plastic",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(-34.531967, 3.200000, -10.343756, -0.611233, 0.000000, -0.791451, 0.000000, 1.000000, 0.000000, 0.791451, 0.000000, -0.611233),
+        Size = Vector3.new(1.400000, 1.800000, 0.850000),
+        Color = Color3.new(0.639216, 0.631373, 0.647059),
+        Material = "Plastic",
+        Transparency = 1.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(-33.494793, 3.676084, -8.256885, -0.585684, -0.035502, -0.809762, -0.032598, 0.999264, -0.020234, 0.809884, 0.014546, -0.586410),
+        Size = Vector3.new(0.800000, 0.800000, 0.800000),
+        Color = Color3.new(1.000000, 0.686275, 0.000000),
+        Material = "SmoothPlastic",
+        Transparency = 0.000000,
+        CanCollide = false,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Block",
+        CFrame = CFrame.new(0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(2048.000000, 1.000000, 2048.000000),
+        Color = Color3.new(0.356863, 0.356863, 0.356863),
+        Material = "Plastic",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Ball",
+        CFrame = CFrame.new(-42.000000, 5.600000, -34.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(13.000000, 10.200000, 11.000000),
+        Color = Color3.new(0.780392, 0.831373, 0.894118),
+        Material = "Slate",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+    {
+        ClassName = "Part",
+        Shape = "Cylinder",
+        CFrame = CFrame.new(-28.500000, 5.500000, -26.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000),
+        Size = Vector3.new(7.000000, 10.000000, 10.000000),
+        Color = Color3.new(0.643137, 0.741176, 0.278431),
+        Material = "Slate",
+        Transparency = 0.000000,
+        CanCollide = true,
+    },
+}
+
+]]
+
+-- Parse exported table safely
+local ok, partsData = pcall(function() return loadstring(exportedPartsStr)() end)
+if not ok or type(partsData) ~= "table" then
+    warn("Failed to load exportedPartsStr. Make sure you pasted the exact export.")
+    return
+end
+
+local function waitForServerEndpoint(timeout)
+    timeout = timeout or DEFAULT_TIMEOUT
+    local t0 = os.clock()
+    while os.clock() - t0 < timeout do
+        local char = player.Character
+        local buildingTools = char and char:FindFirstChild("Building Tools")
+        local syncAPI = buildingTools and buildingTools:FindFirstChild("SyncAPI")
+        local serverEndpoint = syncAPI and syncAPI:FindFirstChild("ServerEndpoint")
+        if serverEndpoint and serverEndpoint:IsA("RemoteFunction") then
+            return serverEndpoint
+        end
+        task.wait(0.2)
+    end
+    return nil
+end
+
+local serverEndpoint = waitForServerEndpoint()
+if not serverEndpoint then
+    warn("Building Tools' ServerEndpoint not found. Make sure Building Tools is present in character.")
+    return
+end
+
+-- map ClassName -> BTools type (fallbacks)
+local partTypeMap = {
+    Part = "Normal",         -- fallback if Shape missing
+    WedgePart = "Wedge",
+    CornerWedgePart = "Corner",
+    VehicleSeat = "Vehicle Seat",
+    Seat = "Seat",
+    TrussPart = "Truss",
+}
+
+-- map exported Shape -> BTools CreatePart1 type
+local shapeToBType = {
+    Block = "Normal",    -- Exporter uses Enum.PartType.Block
+    Ball = "Ball",
+    Cylinder = "Cylinder",
+}
+
+local function approxVec3(a, b, tol)
+    tol = tol or 0.1
+    return (a - b).Magnitude <= tol
+end
+
+local function validatePartInstance(inst, info)
+    if not inst or not inst:IsA("BasePart") then return false end
+    if not approxVec3(inst.Size, info.Size) then return false end
+    if inst.Color ~= info.Color then return false end
+    if inst.Material ~= (Enum.Material[info.Material] or Enum.Material.Plastic) then return false end
+    if math.abs((inst.Transparency or 0) - (info.Transparency or 0)) > 0.05 then return false end
+    if inst.CanCollide ~= (info.CanCollide or false) then return false end
+    if info.ClassName == "Part" and info.Shape then
+        local expectedShape = Enum.PartType[info.Shape]
+        if not expectedShape or inst.Shape ~= expectedShape then return false end
+    end
+    return true
+end
+
+local function createProgressGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ImportProgressGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.45, 0, 0.06, 0)
+    frame.Position = UDim2.new(0.275, 0, 0.88, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+
+    local barBack = Instance.new("Frame")
+    barBack.Size = UDim2.new(1, -20, 0, 22)
+    barBack.Position = UDim2.new(0, 10, 0, 14)
+    barBack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    barBack.BorderSizePixel = 0
+    barBack.Parent = frame
+
+    local barFill = Instance.new("Frame")
+    barFill.Size = UDim2.new(0, 0, 1, 0)
+    barFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    barFill.BorderSizePixel = 0
+    barFill.Parent = barBack
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 18
+    label.Parent = frame
+
+    return screenGui, barFill, label
+end
+
+local function formatEta(seconds)
+    if seconds < 60 then
+        return string.format("%ds", math.ceil(seconds))
+    else
+        local mins = math.floor(seconds/60)
+        local secs = math.ceil(seconds % 60)
+        return string.format("%dm:%02ds", mins, secs)
+    end
+end
+
+local function updateProgressGui(barFill, label, progress, etaSeconds, statusColor)
+    progress = math.clamp(progress, 0, 1)
+    barFill.Size = UDim2.new(progress, 0, 1, 0)
+    if statusColor then
+        barFill.BackgroundColor3 = statusColor
+    end
+    local percent = math.floor(progress * 100)
+    if etaSeconds and etaSeconds > 0 and progress > 0 and progress < 1 then
+        label.Text = string.format("Importing %d%% — ETA: %s", percent, formatEta(etaSeconds))
+    elseif progress >= 1 then
+        label.Text = "Import complete!"
+    else
+        label.Text = string.format("Importing %d%%", percent)
+    end
+end
+
+local function safeInvoke(...)
+    if not serverEndpoint or not serverEndpoint:IsA("RemoteFunction") then
+        return false, "serverEndpoint missing"
+    end
+    local args = {...}
+    local ok, res = pcall(function() return serverEndpoint:InvokeServer(table.unpack(args)) end)
+    if not ok then
+        warn("safeInvoke error:", res)
+    end
+    return ok, res
+end
+
+local function createPartsBatch(batch)
+    local spawned = {}
+    local remaining = #batch
+    local conn
+
+    conn = workspace.ChildAdded:Connect(function(child)
+        if child:IsA("BasePart") then
+            for i=1,#batch do
+                if not spawned[i] then
+                    spawned[i] = child
+                    remaining = remaining - 1
+                    break
+                end
+            end
+            if remaining <= 0 then
+                conn:Disconnect()
+            end
+        end
+    end)
+
+    for _, info in ipairs(batch) do
+        -- choose creation type using Shape when available
+        local btype = nil
+        if info.ClassName == "Part" and info.Shape then
+            btype = shapeToBType[info.Shape] or partTypeMap[info.ClassName] or "Normal"
+        else
+            btype = partTypeMap[info.ClassName] or "Normal"
+        end
+
+        -- debug print so we can see what we're creating
+        -- (remove or comment out in production)
+        print(("CreatePart1 -> type: %s (ClassName=%s, Shape=%s)"):format(tostring(btype), tostring(info.ClassName), tostring(info.Shape)))
+
+        task.spawn(function()
+            safeInvoke("CreatePart1", btype, info.CFrame, workspace)
+        end)
+    end
+
+    local timer = 0
+    while remaining > 0 and timer < 5 do
+        task.wait(0.1)
+        timer = timer + 0.1
+    end
+    if remaining > 0 then
+        warn(("Batch: %d parts didn't appear within timeout."):format(remaining))
+    end
+    if conn and conn.Connected then conn:Disconnect() end
+    return spawned
+end
+
+local function syncBatch(partsList, batchInfos)
+    local resizeTbl, colorTbl, appearanceTbl, behaviorTbl = {}, {}, {}, {}
+
+    for i, inst in ipairs(partsList) do
+        local info = batchInfos[i]
+        if inst and info then
+            table.insert(resizeTbl, { Part = inst, CFrame = info.CFrame, Size = info.Size })
+            table.insert(colorTbl, { Part = inst, Color = info.Color, UnionColoring = false })
+
+            local matEnum = Enum.Material[info.Material] or Enum.Material.Plastic
+            local appearanceEntry = { Part = inst, Material = matEnum }
+            if info.Transparency and info.Transparency > 0 then
+                appearanceEntry.Transparency = info.Transparency
+            end
+            table.insert(appearanceTbl, appearanceEntry)
+
+            -- Sync Shape if specified (fallback if creation didn't set it)
+            if info.ClassName == "Part" and info.Shape then
+                local shapeEnum = Enum.PartType[info.Shape]
+                if shapeEnum then
+                    table.insert(behaviorTbl, { Part = inst, Shape = shapeEnum })
+                end
+            end
+
+            if info.CanCollide ~= nil then
+                table.insert(behaviorTbl, { Part = inst, CanCollide = info.CanCollide })
+            end
+        end
+    end
+
+    if #resizeTbl > 0 then safeInvoke("SyncResize1", resizeTbl) end
+    if #colorTbl > 0 then safeInvoke("SyncColor1", colorTbl) end
+    if #appearanceTbl > 0 then safeInvoke("SyncAppearance1", appearanceTbl) end
+    if #behaviorTbl > 0 then safeInvoke("SyncBehavior1", behaviorTbl) end
+end
+
+local function chunkTable(tbl, size)
+    local out = {}
+    for i = 1, #tbl, size do
+        table.insert(out, {table.unpack(tbl, i, math.min(i+size-1, #tbl))})
+    end
+    return out
+end
+
+local function importPartsBatched(partsTable, batchSize, doRefix, instantImport)
+    batchSize = batchSize or BATCH_SIZE
+    if doRefix == nil then doRefix = true end
+    if instantImport == nil then instantImport = false end
+
+    local batches = chunkTable(partsTable, batchSize)
+    local total = #partsTable
+    local imported = 0
+    local hadErrors = false
+    local screenGui, barFill, label = createProgressGui()
+    local startTime = os.clock()
+
+    for bi, batchInfos in ipairs(batches) do
+        local spawned = createPartsBatch(batchInfos)
+        syncBatch(spawned, batchInfos)
+        task.wait(VALIDATION_DELAY)
+
+        local retryList = {}
+        for i, inst in ipairs(spawned) do
+            local info = batchInfos[i]
+            if inst and validatePartInstance(inst, info) then
+                imported = imported + 1
+            else
+                hadErrors = true
+                if doRefix then table.insert(retryList, info) end
+                warn(("Batch %d part %d appears corrupted/invalid."):format(bi, i))
+            end
+        end
+
+        if doRefix and #retryList > 0 then
+            for _, info in ipairs(retryList) do
+                local attempt = 0
+                local fixed = false
+                while attempt < MAX_RETRIES and not fixed do
+                    attempt = attempt + 1
+                    local created = nil
+                    local conn = workspace.ChildAdded:Connect(function(child)
+                        if child:IsA("BasePart") then
+                            created = child
+                            conn:Disconnect()
+                        end
+                    end)
+
+                    -- use same shape-aware creation here
+                    local btype = nil
+                    if info.ClassName == "Part" and info.Shape then
+                        btype = shapeToBType[info.Shape] or partTypeMap[info.ClassName] or "Normal"
+                    else
+                        btype = partTypeMap[info.ClassName] or "Normal"
+                    end
+                    print(("Refix CreatePart1 -> type: %s (Shape=%s)"):format(tostring(btype), tostring(info.Shape)))
+                    safeInvoke("CreatePart1", btype, info.CFrame, workspace)
+
+                    local t = 0
+                    while not created and t < 3 do
+                        task.wait(0.1)
+                        t = t + 0.1
+                    end
+                    if conn and conn.Connected then conn:Disconnect() end
+                    if not created then
+                        warn("Refix: failed to spawn retry part; retrying...")
+                        task.wait(0.4)
+                        continue
+                    end
+
+                    safeInvoke("SyncResize1", { { Part = created, CFrame = info.CFrame, Size = info.Size } })
+                    safeInvoke("SyncColor1", { { Part = created, Color = info.Color, UnionColoring = false } })
+
+                    local matEnum = Enum.Material[info.Material] or Enum.Material.Plastic
+                    local appearanceEntry = { Part = created, Material = matEnum }
+                    if info.Transparency and info.Transparency > 0 then
+                        appearanceEntry.Transparency = info.Transparency
+                    end
+                    safeInvoke("SyncAppearance1", { appearanceEntry })
+
+                    local behaviorEntries = {}
+                    if info.ClassName == "Part" and info.Shape then
+                        local shapeEnum = Enum.PartType[info.Shape]
+                        if shapeEnum then
+                            table.insert(behaviorEntries, { Part = created, Shape = shapeEnum })
+                        end
+                    end
+                    if info.CanCollide ~= nil then
+                        table.insert(behaviorEntries, { Part = created, CanCollide = info.CanCollide })
+                    end
+                    if #behaviorEntries > 0 then
+                        safeInvoke("SyncBehavior1", behaviorEntries)
+                    end
+
+                    task.wait(VALIDATION_DELAY)
+
+                    if validatePartInstance(created, info) then
+                        fixed = true
+                        imported = imported + 1
+                    else
+                        warn("Refix: retry created part still invalid, will retry again.")
+                        task.wait(0.4)
+                    end
+                end
+                if not fixed then
+                    warn("Refix: max retries reached for one part; manual fix needed.")
+                end
+            end
+        end
+
+        local elapsed = os.clock() - startTime
+        local progress = imported / math.max(total, 1)
+        local eta = 0
+        if progress > 0 and progress < 1 then
+            eta = elapsed / progress * (1 - progress)
+        end
+
+        local barColor = Color3.fromRGB(0,170,255)
+        if progress >= 1 then
+            barColor = hadErrors and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+        end
+        updateProgressGui(barFill, label, progress, eta, barColor)
+
+        if not instantImport then
+            task.wait(1/7)
+        end
+    end
+
+    task.wait(SHOW_TIME_AFTER_DONE)
+    if screenGui and screenGui.Parent then
+        screenGui:Destroy()
+    end
+
+    print(("Import complete! %d / %d parts imported successfully."):format(imported, total))
+end
+
+-- Run importer with defaults:
+importPartsBatched(partsData, BATCH_SIZE, false, true)
