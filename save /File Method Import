@@ -1,0 +1,199 @@
+-- Importer Script (Standalone)
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+local EXPORT_FILENAME = "parts_export.lua"
+
+-- Wait for Building Tools' ServerEndpoint RemoteFunction
+local function waitForServerEndpoint(timeout)
+    timeout = timeout or 5
+    local startTime = os.clock()
+    while os.clock() - startTime < timeout do
+        local char = player.Character
+        local buildingTools = char and char:FindFirstChild("Building Tools")
+        local syncAPI = buildingTools and buildingTools:FindFirstChild("SyncAPI")
+        local serverEndpoint = syncAPI and syncAPI:FindFirstChild("ServerEndpoint")
+        if serverEndpoint and serverEndpoint:IsA("RemoteFunction") then
+            return serverEndpoint
+        end
+        task.wait(0.2)
+    end
+    return nil
+end
+
+local serverEndpoint = waitForServerEndpoint()
+if not serverEndpoint then
+    warn("Building Tools' ServerEndpoint not found. Make sure Building Tools is equipped.")
+    return
+end
+
+-- Read and parse exported file
+if not readfile then
+    warn("readfile not available in this environment.")
+    return
+end
+
+local str
+local success, err = pcall(function()
+    str = readfile(EXPORT_FILENAME)
+end)
+if not success then
+    warn("Failed to read file:", err)
+    return
+end
+
+local ok, partsData = pcall(function()
+    return loadstring(str)()
+end)
+if not ok or type(partsData) ~= "table" then
+    warn("Failed to load parts data from file.")
+    return
+end
+
+-- Map ClassName -> BTools type
+local partTypeMap = {
+    Part = "Normal",
+    WedgePart = "Wedge",
+    CornerWedgePart = "Corner",
+    VehicleSeat = "Vehicle Seat",
+    Seat = "Seat",
+    TrussPart = "Truss",
+}
+
+local shapeToBType = {
+    Block = "Normal",
+    Ball = "Ball",
+    Cylinder = "Cylinder",
+}
+
+-- Helper to safely invoke serverEndpoint
+local function safeInvoke(...)
+    local args = {...}
+    local ok, res = pcall(function()
+        return serverEndpoint:InvokeServer(table.unpack(args))
+    end)
+    if not ok then
+        warn("safeInvoke error:", res)
+    end
+    return ok, res
+end
+
+-- Create parts batch
+local function createPartsBatch(batch)
+    local spawned = {}
+    local remaining = #batch
+
+    local conn
+    conn = Workspace.ChildAdded:Connect(function(child)
+        if child:IsA("BasePart") then
+            for i=1,#batch do
+                if not spawned[i] then
+                    spawned[i] = child
+                    remaining = remaining - 1
+                    break
+                end
+            end
+            if remaining <= 0 then
+                conn:Disconnect()
+            end
+        end
+    end)
+
+    for _, info in ipairs(batch) do
+        local btype
+        if info.ClassName == "Part" and info.Shape then
+            btype = shapeToBType[info.Shape] or partTypeMap[info.ClassName] or "Normal"
+        else
+            btype = partTypeMap[info.ClassName] or "Normal"
+        end
+
+        task.spawn(function()
+            safeInvoke("CreatePart1", btype, info.CFrame, Workspace)
+        end)
+    end
+
+    local timer = 0
+    while remaining > 0 and timer < 5 do
+        task.wait(0.1)
+        timer = timer + 0.1
+    end
+    if remaining > 0 then
+        warn(("Batch: %d parts didn't appear within timeout."):format(remaining))
+    end
+    if conn and conn.Connected then
+        conn:Disconnect()
+    end
+    return spawned
+end
+
+-- Sync properties of spawned parts
+local function syncBatch(partsList, batchInfos)
+    local resizeTbl, colorTbl, appearanceTbl, behaviorTbl = {}, {}, {}, {}
+
+    for i, inst in ipairs(partsList) do
+        local info = batchInfos[i]
+        if inst and info then
+            table.insert(resizeTbl, { Part = inst, CFrame = info.CFrame, Size = info.Size })
+            table.insert(colorTbl, { Part = inst, Color = info.Color, UnionColoring = false })
+
+            local matEnum = Enum.Material[info.Material] or Enum.Material.Plastic
+            local appearanceEntry = { Part = inst, Material = matEnum }
+            if info.Transparency and info.Transparency > 0 then
+                appearanceEntry.Transparency = info.Transparency
+            end
+            table.insert(appearanceTbl, appearanceEntry)
+
+            if info.ClassName == "Part" and info.Shape then
+                local shapeEnum = Enum.PartType[info.Shape]
+                if shapeEnum then
+                    table.insert(behaviorTbl, { Part = inst, Shape = shapeEnum })
+                end
+            end
+            if info.CanCollide ~= nil then
+                table.insert(behaviorTbl, { Part = inst, CanCollide = info.CanCollide })
+            end
+        end
+    end
+
+    if #resizeTbl > 0 then safeInvoke("SyncResize1", resizeTbl) end
+    if #colorTbl > 0 then safeInvoke("SyncColor1", colorTbl) end
+    if #appearanceTbl > 0 then safeInvoke("SyncAppearance1", appearanceTbl) end
+    if #behaviorTbl > 0 then safeInvoke("SyncBehavior1", behaviorTbl) end
+end
+
+-- Split table into chunks
+local function chunkTable(tbl, size)
+    local out = {}
+    for i = 1, #tbl, size do
+        table.insert(out, {table.unpack(tbl, i, math.min(i+size-1, #tbl))})
+    end
+    return out
+end
+
+-- Main import function
+local function importPartsBatched(partsTable, batchSize)
+    batchSize = batchSize or 50
+    local batches = chunkTable(partsTable, batchSize)
+    local total = #partsTable
+    local imported = 0
+
+    for _, batchInfos in ipairs(batches) do
+        local spawned = createPartsBatch(batchInfos)
+        syncBatch(spawned, batchInfos)
+        task.wait(0.6)
+
+        for i, inst in ipairs(spawned) do
+            if inst then
+                imported = imported + 1
+            end
+        end
+        task.wait(0.2)
+    end
+
+    print(("Import complete! %d / %d parts imported successfully."):format(imported, total))
+end
+
+-- Run the importer
+importPartsBatched(partsData)
