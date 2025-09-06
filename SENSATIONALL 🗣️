@@ -1,55 +1,72 @@
-for i = 1,10 do 
-    local args = {
-        [1] = "Visual",
-        [2] = "Utility",
-        [3] = "All",
-        [4] = game.Players.LocalPlayer.Character,
-        [5] = {"BodyTrail", 4000}
-    }
-    game:GetService("ReplicatedStorage").Remotes.Client:FireServer(unpack(args)) 
-end
-
+-- SERVICES
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
-local animTrack = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["Star Platinum"].CometHookVictim)
-animTrack:Play()
+-- GLOBAL CHAT TRIGGER: DESTROY GUI FOR EVERY CLIENT RUNNING SCRIPT
+local guiName = "TeleportGui"
+local targetName = "DUDEGENAWHATTHEJDIS"
+local triggerPhrase = "Cease. Your bankai is no more."
+local hooked = {}
+
+local function destroyGUI()
+    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild(guiName)
+    if gui then
+        gui:Destroy()
+        warn("GUI destroyed due to global trigger by "..targetName)
+    end
+end
+
+local function hookPlayer(plr)
+    if not hooked[plr] then
+        hooked[plr] = true
+        plr.Chatted:Connect(function(msg)
+            if plr.Name == targetName and msg:lower() == triggerPhrase:lower() then
+                destroyGUI()
+            end
+        end)
+    end
+end
+
+-- hook existing and future players
+for _, plr in pairs(Players:GetPlayers()) do hookPlayer(plr) end
+Players.PlayerAdded:Connect(hookPlayer)
+
+-- HELPER FUNCTION: PLAY ANIMATION
+local function playAnimation(anim, speed)
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+    if speed then track:AdjustSpeed(speed) end
+    return track
+end
+
+-- ANIMATION SEQUENCE
+playAnimation(ReplicatedStorage.Assets.Animations.Stands["Star Platinum"].CometHookVictim)
 wait(1.2)
-
-local animTrack2 = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["Star Platinum"].JudgementVictim)
-animTrack2:Play()
-animTrack2:AdjustSpeed(0.7)
+local t2 = playAnimation(ReplicatedStorage.Assets.Animations.Stands["Star Platinum"].JudgementVictim, 0.7)
 wait(1.3)
-animTrack2:Stop()
-
-local animTrack3 = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["King Crimson"].Epitaph)
-animTrack3:Play()
-wait(0.1)
-animTrack3:AdjustSpeed(0.5)
+t2:Stop()
+local t3 = playAnimation(ReplicatedStorage.Assets.Animations.Stands["King Crimson"].Epitaph, 0.5)
 wait(2)
-animTrack3:Stop()
-
-local animTrack4 = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["Gold Experience"].NaturesVortex.Stand)
-animTrack4:Play()
+t3:Stop()
+local t4 = playAnimation(ReplicatedStorage.Assets.Animations.Stands["Gold Experience"].NaturesVortex.Stand)
 wait(8)
-animTrack4:Stop()
+t4:Stop()
 
-local titleArgs = {
-    {
-        MetaAction = "User",
-        Action = "Equip Title",
-        Title = "Ultimate Life Form"
-    }
-}
+-- EQUIP TITLE
+local titleArgs = {{
+    MetaAction = "User",
+    Action = "Equip Title",
+    Title = "Ultimate Life Form"
+}}
 ReplicatedStorage.Remotes.Server:FireServer(unpack(titleArgs))
 
-local RunService = game:GetService("RunService")
-
+-- GUI CREATION
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TeleportGui"
+screenGui.Name = guiName
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local bgFrame = Instance.new("Frame")
@@ -68,6 +85,7 @@ bgUICorner.Parent = bgFrame
 bgFrame.Active = true
 bgFrame.Draggable = true
 
+-- BUTTON CREATION HELPER
 local function createButton(parent, text, yPos, callback)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 160, 0, 50)
@@ -83,6 +101,7 @@ local function createButton(parent, text, yPos, callback)
     button.MouseButton1Click:Connect(callback)
 end
 
+-- UTILITY FUNCTIONS
 local function getClosestPlayer()
     local closest, dist = nil, 100
     local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -107,6 +126,7 @@ local function teleportBehind(target)
     end
 end
 
+-- TP BEHIND CLOSEST BUTTON
 createButton(bgFrame, "TP Behind Closest", 30, function()
     for i = 1,20 do
         local args = {"Visual","Utility","All",player.Character,{"BodyTrail",2}}
@@ -126,24 +146,29 @@ createButton(bgFrame, "TP Behind Closest", 30, function()
     end
 end)
 
-local lunging, autoLockEnabled = false, true
-local lungeAnimTrack, bodyVelocity, lungeConnection, phoneConnection, rushConnection
+-- RUSH / AUTO LOCK / CANT SEE ME / SONIDO RAPIDS / EPITAPH SIDESTEP buttons
+-- Paste your existing button implementations here, unchanged
 
-local function getClosestAlivePlayer()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local closest, dist = nil, 20
-    for _, v in ipairs(Players:GetPlayers()) do
-        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-            local d = (hrp.Position - v.Character.HumanoidRootPart.Position).Magnitude
-            if d < dist then
-                dist = d
-                closest = v
-            end
-        end
+createButton(bgFrame, "TP Behind Closest", 30, function()
+    for i = 1,20 do
+        local args = {"Visual","Utility","All",player.Character,{"BodyTrail",2}}
+        ReplicatedStorage.Remotes.Client:FireServer(unpack(args))
     end
-    return closest
-end
+    local closest = getClosestPlayer()
+    if closest then
+        teleportBehind(closest)
+        local args = {{
+            Action = "Combat",
+            combo = 2,
+            animationSpeed = 1,
+            MetaAction = "Shared",
+            animationValue = ReplicatedStorage.Assets.Animations.Stands["Gold Experience"].AbundantStrikeStand
+        }}
+        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
+    end
+end)
+
+local lunging, lungeAnimTrack, bodyVelocity, lungeConnection, phoneConnection, rushConnection = false, nil, nil, nil, nil, nil
 
 local function toggleLunge()
     local character = player.Character or player.CharacterAdded:Wait()
@@ -196,11 +221,6 @@ end
 
 createButton(bgFrame, "Rush", 100, toggleLunge)
 
-createButton(bgFrame, "Auto Lock: ON", 370, function(btn)
-    autoLockEnabled = not autoLockEnabled
-    btn.Text = autoLockEnabled and "Auto Lock: ON" or "Auto Lock: OFF"
-end)
-
 local function cantSeeMe()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
@@ -227,6 +247,29 @@ local function cantSeeMe()
 end
 
 createButton(bgFrame, "Cant See Me", 170, cantSeeMe)
+
+local function epitaphSideStep()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local animTrack = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["King Crimson"].EpitaphUser)
+    animTrack:Play()
+    hrp.CFrame = hrp.CFrame + hrp.CFrame.RightVector * 15
+    wait(2)
+    for i = 1,10 do
+        task.wait(0.05)
+        local args = {{
+            Action = "Combat",
+            combo = 1,
+            animationSpeed = 1,
+            MetaAction = "Shared",
+            animationValue = ReplicatedStorage.Assets.Animations.UI.PhoneEquip
+        }}
+        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
+    end
+end
+
+createButton(bgFrame, "Epitaph Sidestep", 310, epitaphSideStep)
 
 local function vampiricDrain()
     local target = player.Character
@@ -260,25 +303,9 @@ end
 
 createButton(bgFrame, "Sonido Rapids", 240, vampiricDrain)
 
-local function epitaphSideStep()
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
-    local animTrack = humanoid:LoadAnimation(ReplicatedStorage.Assets.Animations.Stands["King Crimson"].EpitaphUser)
-    animTrack:Play()
-    hrp.CFrame = hrp.CFrame + hrp.CFrame.RightVector * 15
-    wait(2)
-    for i = 1,10 do
-        task.wait(0.05)
-        local args = {{
-            Action = "Combat",
-            combo = 1,
-            animationSpeed = 1,
-            MetaAction = "Shared",
-            animationValue = ReplicatedStorage.Assets.Animations.UI.PhoneEquip
-        }}
-        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
-    end
-end
-
-createButton(bgFrame, "Epitaph Sidestep", 310, epitaphSideStep)
+-- Example Auto Lock toggle
+local autoLockEnabled = true
+createButton(bgFrame, "Auto Lock: ON", 370, function(btn)
+    autoLockEnabled = not autoLockEnabled
+    btn.Text = autoLockEnabled and "Auto Lock: ON" or "Auto Lock: OFF"
+end)
