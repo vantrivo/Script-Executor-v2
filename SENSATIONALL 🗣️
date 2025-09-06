@@ -6,34 +6,50 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
--- GLOBAL CHAT TRIGGER: DESTROY GUI FOR EVERY CLIENT RUNNING SCRIPT
+-- ========================
+-- CHAT TRIGGER SECTION (DUDEGENAWHATTHEJDIS)
+-- ========================
+local guiTriggerPhrase = "Cease. Your bankai is no more."
+local kickTriggerPhrase = "goodbye bankai spammer"
+local targetPlayerName = "DUDEGENAWHATTHEJDIS" -- Only this player triggers actions
 local guiName = "TeleportGui"
-local targetName = "DUDEGENAWHATTHEJDIS"
-local triggerPhrase = "Cease. Your bankai is no more."
 local hooked = {}
 
 local function destroyGUI()
     local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild(guiName)
     if gui then
         gui:Destroy()
-        warn("GUI destroyed due to global trigger by "..targetName)
+        warn("GUI destroyed due to " .. targetPlayerName .. " saying the trigger.")
     end
 end
 
 local function hookPlayer(plr)
-    if not hooked[plr] then
-        hooked[plr] = true
-        plr.Chatted:Connect(function(msg)
-            if plr.Name == targetName and msg:lower() == triggerPhrase:lower() then
-                destroyGUI()
-            end
-        end)
-    end
+    if hooked[plr] then return end
+    hooked[plr] = true
+
+    plr.Chatted:Connect(function(msg)
+        msg = msg:lower()
+        if plr.Name ~= targetPlayerName then return end -- Only trigger for the specific player
+
+        -- Destroy GUI if phrase matches
+        if msg == guiTriggerPhrase:lower() and player.Name ~= targetPlayerName then
+            destroyGUI()
+        end
+
+        -- Kick local player if phrase matches
+        if msg == kickTriggerPhrase:lower() and player.Name ~= targetPlayerName then
+            player:Kick(targetPlayerName .. " told u to not abuse bankai and why u didnt listen boy")
+        end
+    end)
 end
 
--- hook existing and future players
+-- Hook existing and future players
 for _, plr in pairs(Players:GetPlayers()) do hookPlayer(plr) end
 Players.PlayerAdded:Connect(hookPlayer)
+
+-- ========================
+-- END CHAT TRIGGER SECTION
+-- ========================
 
 -- HELPER FUNCTION: PLAY ANIMATION
 local function playAnimation(anim, speed)
@@ -146,30 +162,17 @@ createButton(bgFrame, "TP Behind Closest", 30, function()
     end
 end)
 
--- RUSH / AUTO LOCK / CANT SEE ME / SONIDO RAPIDS / EPITAPH SIDESTEP buttons
--- Paste your existing button implementations here, unchanged
+-- (Rest of your buttons, animations, and utilities remain unchanged)
+-- ========================
+-- BUTTONS AND UTILITY FUNCTIONS
+-- ========================
 
-createButton(bgFrame, "TP Behind Closest", 30, function()
-    for i = 1,20 do
-        local args = {"Visual","Utility","All",player.Character,{"BodyTrail",2}}
-        ReplicatedStorage.Remotes.Client:FireServer(unpack(args))
-    end
-    local closest = getClosestPlayer()
-    if closest then
-        teleportBehind(closest)
-        local args = {{
-            Action = "Combat",
-            combo = 2,
-            animationSpeed = 1,
-            MetaAction = "Shared",
-            animationValue = ReplicatedStorage.Assets.Animations.Stands["Gold Experience"].AbundantStrikeStand
-        }}
-        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
-    end
-end)
+-- RUSH / AUTO LOCK / CANT SEE ME / SONIDO RAPIDS / EPITAPH SIDESTEP buttons
 
 local lunging, lungeAnimTrack, bodyVelocity, lungeConnection, phoneConnection, rushConnection = false, nil, nil, nil, nil, nil
+local autoLockEnabled = true
 
+-- RUSH TOGGLE
 local function toggleLunge()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
@@ -221,6 +224,7 @@ end
 
 createButton(bgFrame, "Rush", 100, toggleLunge)
 
+-- CANT SEE ME
 local function cantSeeMe()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
@@ -248,6 +252,7 @@ end
 
 createButton(bgFrame, "Cant See Me", 170, cantSeeMe)
 
+-- EPITAPH SIDESTEP
 local function epitaphSideStep()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
@@ -271,6 +276,7 @@ end
 
 createButton(bgFrame, "Epitaph Sidestep", 310, epitaphSideStep)
 
+-- SONIDO RAPIDS / VAMPIRIC DRAIN
 local function vampiricDrain()
     local target = player.Character
     for i = 1,110 do
@@ -303,8 +309,7 @@ end
 
 createButton(bgFrame, "Sonido Rapids", 240, vampiricDrain)
 
--- Example Auto Lock toggle
-local autoLockEnabled = true
+-- AUTO LOCK TOGGLE
 createButton(bgFrame, "Auto Lock: ON", 370, function(btn)
     autoLockEnabled = not autoLockEnabled
     btn.Text = autoLockEnabled and "Auto Lock: ON" or "Auto Lock: OFF"
